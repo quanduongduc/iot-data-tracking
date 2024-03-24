@@ -2,7 +2,7 @@ import pulumi
 import pulumi_aws as aws
 import pulumi_awsx as awsx
 from vpc import vpc, ecs_subnet1, ecs_subnet2, api_sg
-from naming import prefix
+from environment import prefix, stack_name
 
 
 cluster = aws.ecs.Cluster(f"{prefix}-cluster")
@@ -12,9 +12,10 @@ repo = aws.ecr.Repository(
     opts=pulumi.ResourceOptions(additional_secret_outputs=["repository_url"]),
 )
 
+api_docker_file = f"../Dockerfile.{stack_name}"
 api_image = awsx.ecr.Image(
     f"{prefix}-fastapi-image",
-    dockerfile="../Dockerfile",
+    dockerfile=api_docker_file,
     context="../..",
     repository_url=repo.repository_url,
     platform="linux/amd64",

@@ -1,5 +1,5 @@
 import pulumi_aws as aws
-from naming import prefix
+from environment import prefix
 
 vpc = aws.ec2.Vpc("vpc", cidr_block="10.0.0.0/16")
 
