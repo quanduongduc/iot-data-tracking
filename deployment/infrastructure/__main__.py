@@ -12,6 +12,14 @@ repo = aws.ecr.Repository(
     opts=pulumi.ResourceOptions(additional_secret_outputs=["repository_url"]),
 )
 
+api_image = awsx.ecr.Image(
+    f"{prefix}-fastapi-image",
+    dockerfile="../Dockerfile",
+    context="../..",
+    repository_url=repo.repository_url,
+    platform="linux/amd64",
+)
+
 # image = awsx.ecr.Image(
 #     f"{prefix}-fastapi_image",
 #     dockerfile="../Dockerfile",
