@@ -70,3 +70,45 @@ task_execution_role = aws.iam.Role(
     ),
     managed_policy_arns=[cloudwatch_policy.arn, ecr_read_policy.arn],
 )
+
+
+s3_read_policy = aws.iam.Policy(
+    "myS3ReadPolicy",
+    description="A policy to allow read access to S3",
+    policy=json.dumps(
+        {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Action": ["s3:GetObject", "s3:ListBucket"],
+                    "Resource": [
+                        get_arn_template(
+                            service="s3", resource_name=f"{project_name}-*"
+                        ),
+                    ],
+                    "Effect": "Allow",
+                }
+            ],
+        }
+    ),
+)
+
+ec2_api_role = aws.iam.Role(
+    f"{project_name}-ec2-api-role",
+    assume_role_policy=json.dumps(
+        {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Action": "sts:AssumeRole",
+                    "Principal": {
+                        "Service": "ec2.amazonaws.com"
+                    },  # replace with the service you want
+                    "Effect": "Allow",
+                    "Sid": "",
+                }
+            ],
+        }
+    ),
+    managed_policy_arns=[s3_read_policy.arn],
+)
