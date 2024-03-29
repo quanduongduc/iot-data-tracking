@@ -73,7 +73,7 @@ task_execution_role = aws.iam.Role(
 
 
 s3_read_policy = aws.iam.Policy(
-    "myS3ReadPolicy",
+    f"{project_name}-s3-read-policy",
     description="A policy to allow read access to S3",
     policy=json.dumps(
         {

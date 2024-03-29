@@ -1,7 +1,7 @@
 import pulumi
 import pulumi_aws as aws
 import pulumi_awsx as awsx
-from vpc import ecs_subnet1, ecs_subnet2, api_sg, vpc
+from vpc import ecs_subnet1, ecs_subnet2, api_sg, vpc, apigw_link_lb, alb
 from environment import prefix, stack_name
 from role import task_execution_role, ec2_api_role
 
@@ -55,12 +55,30 @@ api_instance_profile = aws.iam.InstanceProfile(
 ecs_optimized_ami_name = "/aws/service/ecs/optimized-ami/amazon-linux-2023/recommended"
 ami_id = aws.ssm.get_parameter(name=ecs_optimized_ami_name)
 
-launch_config = aws.ecs.LaunchConfiguration(
+launch_config = aws.ec2.LaunchConfiguration(
     f"{prefix}-launch-config",
-    image_id=ami_id,  
+    image_id=ami_id.value,
     instance_type="t2.micro",
     iam_instance_profile=api_instance_profile,
     security_groups=[api_sg],
+)
+
+
+api_target_group = aws.lb.TargetGroup(
+    f"{prefix}-api-tg",
+    port=80,
+    protocol="HTTP",
+    vpc_id=vpc.id,
+    health_check= {
+        "enabled": True,
+        "path": "/",
+        "port": "traffic-port",
+        "protocol": "HTTP",
+        "interval": 30,
+        "timeout": 5,
+        "healthy_threshold": 2,
+        "unhealthy_threshold": 2,
+    },
 )
 
 api_auto_scaling_group = aws.autoscaling.Group(
@@ -69,22 +87,10 @@ api_auto_scaling_group = aws.autoscaling.Group(
     desired_capacity=2,
     min_size=1,
     max_size=3,
-    vpc_zone_identifier=[ecs_subnet1, ecs_subnet2]
+    vpc_zone_identifiers=[ecs_subnet1.id, ecs_subnet2.id],
+    target_group_arns=[api_target_group.arn],
 )
 
-api_target_group = aws.lb.TargetGroup(
-    f"{prefix}-api-target-group",
-    port=80,
-    protocol="HTTP",
-    vpc_id=vpc.id,
-)
-
-alb = aws.lb.LoadBalancer(
-    f"{prefix}-alb",
-    subnets=[ecs_subnet1, ecs_subnet2],
-    load_balancer_type="network",
-    security_groups=[sg_id],
-)
 
 listener = aws.lb.Listener(
     f"{prefix}-listener",
@@ -96,11 +102,6 @@ listener = aws.lb.Listener(
             "target_group_arn": api_target_group.arn,
         }
     ],
-)
-
-vpc_link = aws.apigateway.VpcLink(
-    f"{prefix}-vpc-link",
-    target_arns=[alb.arn],
 )
 
 api_gate_way = aws.apigateway.RestApi(
@@ -131,7 +132,7 @@ api_gate_way_integration = aws.apigateway.Integration(
     integration_http_method="ANY",
     uri=f"http://{alb.dns_name}/{resource.path_part}",
     connection_type="VPC_LINK",
-    connection_id=vpc_link.id,
+    connection_id=apigw_link_lb.id,
 )
 
 

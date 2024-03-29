@@ -17,18 +17,44 @@ ecs_subnet2 = aws.ec2.Subnet(
     availability_zone="ap-northeast-1a",
 )
 
+alb = aws.lb.LoadBalancer(
+    f"{prefix}-alb",
+    subnets=[ecs_subnet1, ecs_subnet2],
+    load_balancer_type="application",
+)
+
+apigw_link_lb = aws.apigateway.VpcLink(
+    f"{prefix}-vpc-link",
+    target_arn=alb.arn,
+)
+lb_sg = aws.ec2.SecurityGroup(
+    f"{prefix}-lb-sg",
+    name_prefix=prefix,
+    vpc_id=vpc.id,
+    description="Allow port for load balancer",
+    ingress=[
+        aws.ec2.SecurityGroupIngressArgs(
+            description="HTTP from API Gateway via VPC Link",
+            from_port=80,
+            to_port=80,
+            protocol="tcp",
+            security_groups=[apigw_link_lb.id],
+        )
+    ],
+)
+
 api_sg = aws.ec2.SecurityGroup(
     f"{prefix}-api-sg",
     name_prefix=prefix,
     vpc_id=vpc.id,
-    description="Allow port 80",
+    description="Allow port for API",
     ingress=[
-        {
-            "description": "HTTP",
-            "from_port": 80,
-            "to_port": 80,
-            "protocol": "tcp",
-            "cidr_blocks": ["0.0.0.0/0"],
-        }
+        aws.ec2.SecurityGroupIngressArgs(
+            description="HTTP from loadbalancer",
+            from_port=80,
+            to_port=80,
+            protocol="tcp",
+            security_groups=[lb_sg.id],
+        )
     ],
 )
