@@ -69,7 +69,7 @@ api_target_group = aws.lb.TargetGroup(
     port=80,
     protocol="HTTP",
     vpc_id=vpc.id,
-    health_check= {
+    health_check={
         "enabled": True,
         "path": "/",
         "port": "traffic-port",
@@ -154,4 +154,11 @@ api_service = aws.ecs.Service(
     desired_count=2,
 )
 
-pulumi.export("api_service_name", api_service.name)
+deployment = aws.apigateway.Deployment(
+    f"{prefix}-deployment",
+    rest_api=api_gate_way.id,
+    stage_name=stack_name,
+    opts=pulumi.ResourceOptions(depends_on=[api_gate_way_integration]),
+)
+
+pulumi.export("api_gate_way_endpoint", deployment.invoke_url)

@@ -83,7 +83,8 @@ s3_read_policy = aws.iam.Policy(
                     "Action": ["s3:GetObject", "s3:ListBucket"],
                     "Resource": [
                         get_arn_template(
-                            service="s3", resource_name=f"{project_name}-*"
+                            service="s3",
+                            resource_name=f"{project_name}-*/*",
                         ),
                     ],
                     "Effect": "Allow",
@@ -101,9 +102,7 @@ ec2_api_role = aws.iam.Role(
             "Statement": [
                 {
                     "Action": "sts:AssumeRole",
-                    "Principal": {
-                        "Service": "ec2.amazonaws.com"
-                    },  # replace with the service you want
+                    "Principal": {"Service": "ec2.amazonaws.com"},
                     "Effect": "Allow",
                     "Sid": "",
                 }
