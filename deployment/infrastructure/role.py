@@ -18,9 +18,14 @@ ecr_read_policy = aws.iam.Policy(
                         "ecr:BatchCheckLayerAvailability",
                     ],
                     "Resource": get_arn_template(
-                        service="ecr", resource_name=f"{project_name}-*"
+                        service="ecr", resource_name=f"repository/{project_name}-*"
                     ),
-                }
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": ["ecr:GetAuthorizationToken"],
+                    "Resource": "*",
+                },
             ],
         }
     ),
@@ -94,6 +99,38 @@ s3_read_policy = aws.iam.Policy(
     ),
 )
 
+ecs_registration_policy = aws.iam.Policy(
+    f"{project_name}-ecs-registration-policy",
+    policy=json.dumps(
+        {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "ecs:CreateCluster",
+                        "ec2:DescribeTags",
+                        "ecs:DeregisterContainerInstance",
+                        "ecs:DiscoverPollEndpoint",
+                        "ecs:Poll",
+                        "ecs:RegisterContainerInstance",
+                        "ecs:StartTelemetrySession",
+                        "ecs:UpdateContainerInstancesState",
+                        "ecs:Submit*",
+                        "ecr:GetAuthorizationToken",
+                        "ecr:BatchCheckLayerAvailability",
+                        "ecr:GetDownloadUrlForLayer",
+                        "ecr:BatchGetImage",
+                        "logs:CreateLogStream",
+                        "logs:PutLogEvents",
+                    ],
+                    "Resource": "*",
+                }
+            ],
+        }
+    ),
+)
+
 ec2_api_role = aws.iam.Role(
     f"{project_name}-ec2-api-role",
     assume_role_policy=json.dumps(
@@ -109,5 +146,5 @@ ec2_api_role = aws.iam.Role(
             ],
         }
     ),
-    managed_policy_arns=[s3_read_policy.arn],
+    managed_policy_arns=[s3_read_policy.arn, ecs_registration_policy.arn],
 )

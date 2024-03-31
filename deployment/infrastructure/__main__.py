@@ -1,7 +1,15 @@
+import json
 import pulumi
 import pulumi_aws as aws
 import pulumi_awsx as awsx
-from vpc import ecs_subnet1, ecs_subnet2, api_sg, vpc, apigw_link_lb, alb
+from vpc import (
+    ecs_private_subnet1,
+    ecs_private_subnet2,
+    api_sg,
+    vpc,
+    apigw_link_lb,
+    nlb,
+)
 from environment import prefix, stack_name
 from role import task_execution_role, ec2_api_role
 
@@ -26,25 +34,20 @@ api_task_definition = aws.ecs.TaskDefinition(
     f"{prefix}-api-task",
     family=f"{prefix}-api-task",
     cpu="256",
-    memory="512",
-    network_mode="awsvpc",
+    memory="256",
+    network_mode="bridge",
     requires_compatibilities=["EC2"],
     execution_role_arn=task_execution_role.arn,
-    container_definitions=pulumi.Output.all(
-        repo.repository_url, api_image.image_uri
-    ).apply(
-        lambda args: f"""[
-            {{
-                "name": "{prefix}-api-container",
-                "image": "{args[0]}:{args[1]}",
-                "portMappings": [
-                    {{
-                        "containerPort": 80,
-                        "hostPort": 80
-                    }}
-                ]
-            }}
-        ]"""
+    container_definitions=pulumi.Output.all(api_image.image_uri).apply(
+        lambda args: json.dumps(
+            [
+                {
+                    "name": f"{prefix}-api-container",
+                    "image": args[0],
+                    "portMappings": [{"containerPort": 5006, "hostPort": 80}],
+                }
+            ]
+        ),
     ),
 )
 
@@ -53,54 +56,93 @@ api_instance_profile = aws.iam.InstanceProfile(
 )
 
 ecs_optimized_ami_name = "/aws/service/ecs/optimized-ami/amazon-linux-2023/recommended"
-ami_id = aws.ssm.get_parameter(name=ecs_optimized_ami_name)
+ecs_optimized_ami_id = json.loads(
+    aws.ssm.get_parameter(name=ecs_optimized_ami_name).value
+)["image_id"]
 
 launch_config = aws.ec2.LaunchConfiguration(
     f"{prefix}-launch-config",
-    image_id=ami_id.value,
+    image_id=ecs_optimized_ami_id,
     instance_type="t2.micro",
     iam_instance_profile=api_instance_profile,
     security_groups=[api_sg],
+    key_name="test",
+    user_data=pulumi.Output.concat(
+        "#!/bin/bash\necho ECS_CLUSTER=", cluster.name, " >> /etc/ecs/ecs.config"
+    ),
 )
 
 
 api_target_group = aws.lb.TargetGroup(
     f"{prefix}-api-tg",
     port=80,
-    protocol="HTTP",
+    protocol="TCP",
     vpc_id=vpc.id,
-    health_check={
-        "enabled": True,
-        "path": "/",
-        "port": "traffic-port",
-        "protocol": "HTTP",
-        "interval": 30,
-        "timeout": 5,
-        "healthy_threshold": 2,
-        "unhealthy_threshold": 2,
-    },
+    health_check=aws.lb.TargetGroupHealthCheckArgs(
+        enabled=True,
+        protocol="TCP",
+        port="80",
+        interval=30,
+        timeout=10,
+        healthy_threshold=2,
+        unhealthy_threshold=2,
+    ),
+    opts=pulumi.ResourceOptions(
+        depends_on=[nlb],
+        replace_on_changes=["arn"],
+    ),
 )
 
 api_auto_scaling_group = aws.autoscaling.Group(
     f"{prefix}-asg",
     launch_configuration=launch_config.id,
     desired_capacity=2,
+    health_check_type="ELB",
     min_size=1,
     max_size=3,
-    vpc_zone_identifiers=[ecs_subnet1.id, ecs_subnet2.id],
+    vpc_zone_identifiers=[ecs_private_subnet1.id, ecs_private_subnet2.id],
     target_group_arns=[api_target_group.arn],
+    opts=pulumi.ResourceOptions(
+        depends_on=[launch_config], replace_on_changes=["launch_configuration"]
+    ),
+)
+
+capacity_provider = aws.ecs.CapacityProvider(
+    f"{prefix}-capacity-provider",
+    auto_scaling_group_provider=aws.ecs.CapacityProviderAutoScalingGroupProviderArgs(
+        auto_scaling_group_arn=api_auto_scaling_group.arn,
+        managed_scaling=aws.ecs.CapacityProviderAutoScalingGroupProviderManagedScalingArgs(
+            status="ENABLED",
+            target_capacity=10,
+        ),
+        managed_termination_protection="DISABLED",
+    ),
+)
+
+cluster_capacity_providers = aws.ecs.ClusterCapacityProviders(
+    f"{prefix}-cluster-capacity-providers",
+    cluster_name=cluster.name,
+    capacity_providers=[capacity_provider.name],
+    default_capacity_provider_strategies=[
+        aws.ecs.ClusterCapacityProvidersDefaultCapacityProviderStrategyArgs(
+            base=1,
+            weight=1,
+            capacity_provider=capacity_provider.name,
+        ),
+    ],
 )
 
 
 listener = aws.lb.Listener(
     f"{prefix}-listener",
-    load_balancer_arn=alb.arn,
+    load_balancer_arn=nlb.arn,
     port=80,
+    protocol="TCP",
     default_actions=[
-        {
-            "type": "forward",
-            "target_group_arn": api_target_group.arn,
-        }
+        aws.lb.ListenerDefaultActionArgs(
+            type="forward",
+            target_group_arn=api_target_group.arn,
+        )
     ],
 )
 
@@ -129,8 +171,8 @@ api_gate_way_integration = aws.apigateway.Integration(
     resource_id=resource.id,
     http_method=method.http_method,
     type="HTTP_PROXY",
-    integration_http_method="ANY",
-    uri=f"http://{alb.dns_name}/{resource.path_part}",
+    integration_http_method="GET",
+    uri=nlb.dns_name.apply(lambda dns: f"http://{dns}"),
     connection_type="VPC_LINK",
     connection_id=apigw_link_lb.id,
 )
@@ -141,17 +183,20 @@ api_service = aws.ecs.Service(
     cluster=cluster.arn,
     task_definition=api_task_definition.arn,
     launch_type="EC2",
-    network_configuration=aws.ecs.ServiceNetworkConfigurationArgs(
-        subnets=[
-            ecs_subnet1.id,
-            ecs_subnet2.id,
-        ],
-        assign_public_ip=False,
-        security_groups=[
-            api_sg.id,
-        ],
-    ),
-    desired_count=2,
+    # network_configuration=aws.ecs.ServiceNetworkConfigurationArgs(
+    #     subnets=[
+    #         ecs_private_subnet1.id,
+    #         ecs_private_subnet2.id,
+    #     ],
+    #     assign_public_ip=False,
+    #     security_groups=[
+    #         api_sg.id,
+    #     ],
+    # ),
+    desired_count=3,
+    placement_constraints=[
+        aws.ecs.ServicePlacementConstraintArgs(type="distinctInstance"),
+    ],
 )
 
 deployment = aws.apigateway.Deployment(

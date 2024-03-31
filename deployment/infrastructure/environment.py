@@ -8,7 +8,9 @@ account_id = aws.get_caller_identity().account_id
 region = aws.get_region().name
 
 
-def get_arn_template(service: str, resource_name: str, region=None, account_id=None):
+def get_arn_template(
+    service: str, resource_name: str, region=region, account_id=account_id
+):
     if service == "s3":
         return f"arn:aws:{service}:::{resource_name}"
     elif region is None and account_id is None:
