@@ -1,8 +1,6 @@
 import pulumi
 import pulumi_aws as aws
-from vpc import (
-    nlb,
-)
+from share_resources import nlb
 from environment import prefix, stack_name
 
 apigw_link_lb = aws.apigateway.VpcLink(

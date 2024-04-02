@@ -1,8 +1,18 @@
+import base64
+import functools
 import json
 import logging
 import os
-from typing import Any, List, Tuple, Type, cast
+from typing import Any, List, Tuple, Type
 from boto3 import Session
+from botocore.exceptions import (
+    NoCredentialsError,
+    ClientError,
+    NoCredentialsError,
+    ParamValidationError,
+    NoCredentialsError,
+    ParamValidationError,
+)
 from pydantic.fields import FieldInfo
 from pydantic import AnyUrl, PostgresDsn, SecretStr
 from pydantic_settings import (
@@ -18,19 +28,41 @@ session = Session()
 secretsmanager_client = session.client(service_name="secretsmanager")
 
 
+@functools.lru_cache()
+def get_secret() -> dict[str, Any] | None:
+    try:
+        session = Session()
+        client = session.client(service_name="secretsmanager")
+        secret_id = os.environ.get("AWS_SECRET_ID")
+
+        if not secret_id:
+            logging.error("AWS_SECRET_ID environment variable is not set")
+            return None
+
+        response = client.get_secret_value(SecretId=secret_id)
+        if "SecretString" in response:
+            secret_dictionary = json.loads(response["SecretString"])
+        else:
+            secret_dictionary = json.loads(base64.b64decode(response["SecretBinary"]))
+        return secret_dictionary
+    except (ClientError, NoCredentialsError, ParamValidationError) as error:
+        if isinstance(error, (NoCredentialsError, ParamValidationError)):
+            logging.debug("AWS Secrets Manager: %s", error)
+        else:
+            message = f"{error.response['Error']['Code']} to secret"
+            logging.error(f"{message} {secret_id}: {error}")
+        return None
+
+
 class SecretManagerSource(EnvSettingsSource):
     def prepare_field_value(
         self, field_name: str, field: FieldInfo, value: Any, value_is_complex: bool
     ) -> str | dict[str, Any]:
-        secret_string = secretsmanager_client.get_secret_value(SecretId=field_name)[
-            "SecretString"
-        ]
-        try:
-            return json.loads(secret_string)
-        except json.decoder.JSONDecodeError:
-            return secret_string
-        except Exception as e:
-            logging.error(f"Error while fetching secret {field_name}: {e}")
+        secret_dict = get_secret()
+        if secret_dict is None:
+            return field.default
+
+        return get_secret().get(field_name, field.default)
 
 
 class AppSettings(BaseSettings):
@@ -38,8 +70,8 @@ class AppSettings(BaseSettings):
 
     JWT_ALG: str
     JWT_EXP: int
-    JWT_SECRET: SecretStr
-    SECURE_COOKIES: bool
+    JWT_PUBLIC_KEY: SecretStr
+    JWT_PRIVATE_KEY: SecretStr
 
     CORS_HEADERS: List[str]
     CORS_ORIGINS: List[AnyUrl]
@@ -82,3 +114,4 @@ class AppSettings(BaseSettings):
 
 
 settings = AppSettings()
+get_secret.cache_clear()

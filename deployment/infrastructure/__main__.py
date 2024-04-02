@@ -7,11 +7,12 @@ from vpc import (
     ecs_private_subnet2,
     api_sg,
     vpc,
-    lb_sg,
 )
+from share_resources import nlb
 from environment import prefix, stack_name
 from role import task_execution_role, ec2_api_role
 from api_gw import deployment
+from secrets_manager import secret
 
 cluster = aws.ecs.Cluster(f"{prefix}-cluster")
 
@@ -38,6 +39,7 @@ api_task_definition = aws.ecs.TaskDefinition(
     network_mode="bridge",
     requires_compatibilities=["EC2"],
     execution_role_arn=task_execution_role.arn,
+    # task_role_arn=ec2_api_role.arn,
     container_definitions=pulumi.Output.all(api_image.image_uri).apply(
         lambda args: json.dumps(
             [
@@ -45,6 +47,9 @@ api_task_definition = aws.ecs.TaskDefinition(
                     "name": f"{prefix}-api-container",
                     "image": args[0],
                     "portMappings": [{"containerPort": 5006, "hostPort": 80}],
+                    "environment": [
+                        {"name": "AWS_SECRET_ID", "value": f"{secret.name}"},
+                    ],
                 }
             ]
         ),
@@ -64,21 +69,14 @@ launch_config = aws.ec2.LaunchConfiguration(
     f"{prefix}-launch-config",
     image_id=ecs_optimized_ami_id,
     instance_type="t2.micro",
-    iam_instance_profile=api_instance_profile,
     security_groups=[api_sg],
     key_name="test",
+    iam_instance_profile=api_instance_profile.arn,
     user_data=pulumi.Output.concat(
         "#!/bin/bash\necho ECS_CLUSTER=", cluster.name, " >> /etc/ecs/ecs.config"
     ),
 )
 
-nlb = aws.lb.LoadBalancer(
-    f"{prefix}-nlb",
-    internal=True,
-    subnets=[ecs_private_subnet1, ecs_private_subnet2],
-    security_groups=[lb_sg.id],
-    load_balancer_type="network",
-)
 
 api_target_group = aws.lb.TargetGroup(
     f"{prefix}-api-tg",
