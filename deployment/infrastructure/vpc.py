@@ -96,19 +96,6 @@ lb_sg = aws.ec2.SecurityGroup(
     ],
 )
 
-nlb = aws.lb.LoadBalancer(
-    f"{prefix}-nlb",
-    internal=True,
-    subnets=[ecs_private_subnet1, ecs_private_subnet2],
-    security_groups=[lb_sg.id],
-    load_balancer_type="network",
-)
-
-apigw_link_lb = aws.apigateway.VpcLink(
-    f"{prefix}-vpc-link",
-    target_arn=nlb.arn,
-)
-
 api_sg = aws.ec2.SecurityGroup(
     f"{prefix}-api-sg",
     name_prefix=prefix,

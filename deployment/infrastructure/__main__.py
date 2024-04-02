@@ -7,11 +7,11 @@ from vpc import (
     ecs_private_subnet2,
     api_sg,
     vpc,
-    apigw_link_lb,
-    nlb,
+    lb_sg,
 )
 from environment import prefix, stack_name
 from role import task_execution_role, ec2_api_role
+from api_gw import deployment
 
 cluster = aws.ecs.Cluster(f"{prefix}-cluster")
 
@@ -72,6 +72,13 @@ launch_config = aws.ec2.LaunchConfiguration(
     ),
 )
 
+nlb = aws.lb.LoadBalancer(
+    f"{prefix}-nlb",
+    internal=True,
+    subnets=[ecs_private_subnet1, ecs_private_subnet2],
+    security_groups=[lb_sg.id],
+    load_balancer_type="network",
+)
 
 api_target_group = aws.lb.TargetGroup(
     f"{prefix}-api-tg",
@@ -132,7 +139,6 @@ cluster_capacity_providers = aws.ecs.ClusterCapacityProviders(
     ],
 )
 
-
 listener = aws.lb.Listener(
     f"{prefix}-listener",
     load_balancer_arn=nlb.arn,
@@ -146,64 +152,15 @@ listener = aws.lb.Listener(
     ],
 )
 
-api_gate_way = aws.apigateway.RestApi(
-    f"{prefix}-api-gateway",
-)
-
-resource = aws.apigateway.Resource(
-    f"{prefix}-resource",
-    rest_api=api_gate_way.id,
-    parent_id=api_gate_way.root_resource_id,
-    path_part="{proxy+}",
-)
-
-method = aws.apigateway.Method(
-    f"{prefix}-method",
-    rest_api=api_gate_way.id,
-    resource_id=resource.id,
-    http_method="ANY",
-    authorization="NONE",
-)
-
-api_gate_way_integration = aws.apigateway.Integration(
-    f"{prefix}-integration",
-    rest_api=api_gate_way.id,
-    resource_id=resource.id,
-    http_method=method.http_method,
-    type="HTTP_PROXY",
-    integration_http_method="GET",
-    uri=nlb.dns_name.apply(lambda dns: f"http://{dns}"),
-    connection_type="VPC_LINK",
-    connection_id=apigw_link_lb.id,
-)
-
-
 api_service = aws.ecs.Service(
     f"{prefix}-api-service",
     cluster=cluster.arn,
     task_definition=api_task_definition.arn,
     launch_type="EC2",
-    # network_configuration=aws.ecs.ServiceNetworkConfigurationArgs(
-    #     subnets=[
-    #         ecs_private_subnet1.id,
-    #         ecs_private_subnet2.id,
-    #     ],
-    #     assign_public_ip=False,
-    #     security_groups=[
-    #         api_sg.id,
-    #     ],
-    # ),
     desired_count=3,
     placement_constraints=[
         aws.ecs.ServicePlacementConstraintArgs(type="distinctInstance"),
     ],
-)
-
-deployment = aws.apigateway.Deployment(
-    f"{prefix}-deployment",
-    rest_api=api_gate_way.id,
-    stage_name=stack_name,
-    opts=pulumi.ResourceOptions(depends_on=[api_gate_way_integration]),
 )
 
 pulumi.export("api_gate_way_endpoint", deployment.invoke_url)
