@@ -44,7 +44,6 @@ nat_route1 = aws.ec2.Route(
     destination_cidr_block="0.0.0.0/0",
     nat_gateway_id=nat_gateway.id,
 )
-
 private_subnet_route_association1 = aws.ec2.RouteTableAssociation(
     f"{prefix}-private-subnet-route-association1",
     subnet_id=ecs_private_subnet1.id,

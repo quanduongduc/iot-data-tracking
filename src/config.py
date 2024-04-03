@@ -32,7 +32,12 @@ secretsmanager_client = session.client(service_name="secretsmanager")
 def get_secret() -> dict[str, Any] | None:
     try:
         session = Session()
-        client = session.client(service_name="secretsmanager")
+        region = os.environ.get("AWS_DEFAULT_REGION")
+        if not region:
+            logging.error("AWS_DEFAULT_REGION environment variable is not set")
+            return None
+        
+        client = session.client(service_name="secretsmanager", region_name=region)
         secret_id = os.environ.get("AWS_SECRET_ID")
         if not secret_id:
             logging.error("AWS_SECRET_ID environment variable is not set")

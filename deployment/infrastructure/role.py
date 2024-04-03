@@ -46,7 +46,7 @@ cloudwatch_policy = aws.iam.Policy(
                         "logs:CreateLogGroup",
                     ],
                     "Resource": get_arn_template(
-                        service="logs", resource_name=f"{project_name}-*"
+                        service="logs", resource_name=f"log-group:{project_name}-*"
                     ),
                 }
             ],
@@ -146,7 +146,9 @@ secret_manager_policy = aws.iam.Policy(
                         "secretsmanager:ListSecretVersionIds",
                         "secretsmanager:ListSecrets",
                     ],
-                    "Resource": get_arn_template("secretsmanager", f"{project_name}-*"),
+                    "Resource": get_arn_template(
+                        "secretsmanager", f"secret:{project_name}-*"
+                    ),
                 }
             ],
         }

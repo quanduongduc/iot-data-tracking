@@ -48,10 +48,7 @@ api_task_definition = aws.ecs.TaskDefinition(
     network_mode="bridge",
     requires_compatibilities=["EC2"],
     execution_role_arn=task_execution_role.arn,
-    # task_role_arn=ec2_api_role.arn,
-    container_definitions=pulumi.Output.all(
-        api_image.image_uri, log_group.name
-    ).apply(
+    container_definitions=pulumi.Output.all(api_image.image_uri, log_group.name, secret.name).apply(
         lambda args: json.dumps(
             [
                 {
@@ -59,7 +56,8 @@ api_task_definition = aws.ecs.TaskDefinition(
                     "image": args[0],
                     "portMappings": [{"containerPort": 5006, "hostPort": 80}],
                     "environment": [
-                        {"name": "AWS_SECRET_ID", "value": f"{secret.name}"},
+                        {"name": "AWS_SECRET_ID", "value": f"{args[2]}"},
+                        {"name": "AWS_DEFAULT_REGION", "value": f"{region}"},
                     ],
                     "logConfiguration": {
                         "logDriver": "awslogs",
