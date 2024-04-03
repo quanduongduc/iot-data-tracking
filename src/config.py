@@ -34,7 +34,6 @@ def get_secret() -> dict[str, Any] | None:
         session = Session()
         client = session.client(service_name="secretsmanager")
         secret_id = os.environ.get("AWS_SECRET_ID")
-
         if not secret_id:
             logging.error("AWS_SECRET_ID environment variable is not set")
             return None
@@ -43,7 +42,8 @@ def get_secret() -> dict[str, Any] | None:
         if "SecretString" in response:
             secret_dictionary = json.loads(response["SecretString"])
         else:
-            secret_dictionary = json.loads(base64.b64decode(response["SecretBinary"]))
+            secret_dictionary = json.loads(
+                base64.b64decode(response["SecretBinary"]))
         return secret_dictionary
     except (ClientError, NoCredentialsError, ParamValidationError) as error:
         if isinstance(error, (NoCredentialsError, ParamValidationError)):
@@ -62,19 +62,20 @@ class SecretManagerSource(EnvSettingsSource):
         if secret_dict is None:
             return field.default
 
-        return get_secret().get(field_name, field.default)
+        return secret_dict.get(field_name, field.default)
 
 
 class AppSettings(BaseSettings):
     ENVIRONMENT: Environment
 
     JWT_ALG: str
-    JWT_EXP: int
+    JWT_ACCESS_EXP: int
+    JWT_REFRESH_EXP: int
     JWT_PUBLIC_KEY: SecretStr
     JWT_PRIVATE_KEY: SecretStr
 
     CORS_HEADERS: List[str]
-    CORS_ORIGINS: List[AnyUrl]
+    CORS_ORIGINS: List[str]
 
     POSTGRES_USER: str
     POSTGRES_PASSWORD: SecretStr
