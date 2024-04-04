@@ -9,7 +9,7 @@ from vpc import (
     vpc,
 )
 
-from environment import prefix, stack_name
+from environment import prefix, stack_name, region
 from role import task_execution_role, ec2_api_role
 from api_gw import stage
 from lb import api_target_group
@@ -32,6 +32,15 @@ api_image = awsx.ecr.Image(
     platform="linux/amd64",
 )
 
+log_group = aws.cloudwatch.LogGroup(
+    f"{prefix}-log",
+    retention_in_days=7,
+)
+api_log_stream = aws.cloudwatch.LogStream(
+    f"{prefix}-api-log-stream",
+    log_group_name=log_group.name,
+)
+
 api_task_definition = aws.ecs.TaskDefinition(
     f"{prefix}-api-task",
     family=f"{prefix}-api-task",
@@ -40,8 +49,7 @@ api_task_definition = aws.ecs.TaskDefinition(
     network_mode="bridge",
     requires_compatibilities=["EC2"],
     execution_role_arn=task_execution_role.arn,
-    # task_role_arn=ec2_api_role.arn,
-    container_definitions=pulumi.Output.all(api_image.image_uri).apply(
+    container_definitions=pulumi.Output.all(api_image.image_uri, log_group.name, secret.name).apply(
         lambda args: json.dumps(
             [
                 {
@@ -49,8 +57,17 @@ api_task_definition = aws.ecs.TaskDefinition(
                     "image": args[0],
                     "portMappings": [{"containerPort": 5006, "hostPort": 80}],
                     "environment": [
-                        {"name": "AWS_SECRET_ID", "value": f"{secret.name}"},
+                        {"name": "AWS_SECRET_ID", "value": f"{args[2]}"},
+                        {"name": "AWS_DEFAULT_REGION", "value": f"{region}"},
                     ],
+                    "logConfiguration": {
+                        "logDriver": "awslogs",
+                        "options": {
+                            "awslogs-group": args[1],
+                            "awslogs-region": region,
+                            "awslogs-stream-prefix": "api",
+                        },
+                    },
                 }
             ]
         ),

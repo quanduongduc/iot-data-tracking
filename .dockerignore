@@ -3,7 +3,7 @@ deployment/infrastructure
 __pycache__/
 venv/
 .DS_Store
-# *.env
+*.env
 *.log
 test/
 ```

@@ -13,6 +13,7 @@ ecr_read_policy = aws.iam.Policy(
                 {
                     "Effect": "Allow",
                     "Action": [
+                        "ecr:GetAuthorizationToken",
                         "ecr:GetDownloadUrlForLayer",
                         "ecr:BatchGetImage",
                         "ecr:BatchCheckLayerAvailability",
@@ -45,7 +46,7 @@ cloudwatch_policy = aws.iam.Policy(
                         "logs:CreateLogGroup",
                     ],
                     "Resource": get_arn_template(
-                        service="logs", resource_name=f"{project_name}-*"
+                        service="logs", resource_name=f"log-group:{project_name}-*"
                     ),
                 }
             ],
@@ -73,6 +74,7 @@ task_execution_role = aws.iam.Role(
             }
         )
     ),
+    managed_policy_arns=[ecr_read_policy.arn, cloudwatch_policy.arn],
 )
 
 
@@ -116,7 +118,6 @@ ecs_registration_policy = aws.iam.Policy(
                         "ecs:StartTelemetrySession",
                         "ecs:UpdateContainerInstancesState",
                         "ecs:Submit*",
-                        "ecr:GetAuthorizationToken",
                         "ecr:BatchCheckLayerAvailability",
                         "ecr:GetDownloadUrlForLayer",
                         "ecr:BatchGetImage",
@@ -145,7 +146,9 @@ secret_manager_policy = aws.iam.Policy(
                         "secretsmanager:ListSecretVersionIds",
                         "secretsmanager:ListSecrets",
                     ],
-                    "Resource": get_arn_template("secretsmanager", f"{project_name}-*"),
+                    "Resource": get_arn_template(
+                        "secretsmanager", f"secret:{project_name}-*"
+                    ),
                 }
             ],
         }
