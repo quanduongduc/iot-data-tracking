@@ -65,13 +65,12 @@ public_subnet_route = aws.ec2.Route(
 )
 
 public_subnet_route_association = aws.ec2.RouteTableAssociation(
-    "publicRouteTableAssoc",
+    f"{prefix}-public-subnet-route-association",
     route_table_id=public_route_table.id,
     subnet_id=ecs_public_subnet.id,
 )
 
-
-lb_sg = aws.ec2.SecurityGroup(
+alb_sg = aws.ec2.SecurityGroup(
     f"{prefix}-lb-sg",
     name_prefix=prefix,
     vpc_id=vpc.id,
@@ -107,7 +106,7 @@ api_sg = aws.ec2.SecurityGroup(
             from_port=80,
             to_port=80,
             protocol="tcp",
-            security_groups=[lb_sg.id],
+            security_groups=[alb_sg.id],
         ),
         aws.ec2.SecurityGroupIngressArgs(
             description="SSH from anywhere",

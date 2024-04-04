@@ -8,10 +8,11 @@ from vpc import (
     api_sg,
     vpc,
 )
-from share_resources import nlb
+
 from environment import prefix, stack_name
 from role import task_execution_role, ec2_api_role
-from api_gw import deployment
+from api_gw import stage
+from lb import api_target_group
 from secrets_manager import secret
 
 cluster = aws.ecs.Cluster(f"{prefix}-cluster")
@@ -78,26 +79,6 @@ launch_config = aws.ec2.LaunchConfiguration(
 )
 
 
-api_target_group = aws.lb.TargetGroup(
-    f"{prefix}-api-tg",
-    port=80,
-    protocol="TCP",
-    vpc_id=vpc.id,
-    health_check=aws.lb.TargetGroupHealthCheckArgs(
-        enabled=True,
-        protocol="TCP",
-        port="80",
-        interval=30,
-        timeout=10,
-        healthy_threshold=2,
-        unhealthy_threshold=2,
-    ),
-    opts=pulumi.ResourceOptions(
-        depends_on=[nlb],
-        replace_on_changes=["arn"],
-    ),
-)
-
 api_auto_scaling_group = aws.autoscaling.Group(
     f"{prefix}-asg",
     launch_configuration=launch_config.id,
@@ -137,19 +118,6 @@ cluster_capacity_providers = aws.ecs.ClusterCapacityProviders(
     ],
 )
 
-listener = aws.lb.Listener(
-    f"{prefix}-listener",
-    load_balancer_arn=nlb.arn,
-    port=80,
-    protocol="TCP",
-    default_actions=[
-        aws.lb.ListenerDefaultActionArgs(
-            type="forward",
-            target_group_arn=api_target_group.arn,
-        )
-    ],
-)
-
 api_service = aws.ecs.Service(
     f"{prefix}-api-service",
     cluster=cluster.arn,
@@ -161,4 +129,5 @@ api_service = aws.ecs.Service(
     ],
 )
 
-pulumi.export("api_gate_way_endpoint", deployment.invoke_url)
+pulumi.export("api_gate_way_endpoint", stage.invoke_url)
+pulumi.export("secret_name", secret.name)

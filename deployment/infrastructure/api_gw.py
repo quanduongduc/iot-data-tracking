@@ -1,48 +1,42 @@
 import pulumi
 import pulumi_aws as aws
-from share_resources import nlb
+from lb import alb_listener
 from environment import prefix, stack_name
 
-apigw_link_lb = aws.apigateway.VpcLink(
-    f"{prefix}-vpc-link",
-    target_arn=nlb.arn,
-)
-
-api_gate_way = aws.apigateway.RestApi(
+api_gate_way = aws.apigatewayv2.Api(
     f"{prefix}-api-gateway",
+    protocol_type="HTTP",
+    route_selection_expression="$request.method $request.path",
 )
 
-resource = aws.apigateway.Resource(
-    f"{prefix}-resource",
-    rest_api=api_gate_way.id,
-    parent_id=api_gate_way.root_resource_id,
-    path_part="{proxy+}",
-)
-
-method = aws.apigateway.Method(
-    f"{prefix}-method",
-    rest_api=api_gate_way.id,
-    resource_id=resource.id,
-    http_method="ANY",
-    authorization="NONE",
-)
-
-api_gate_way_integration = aws.apigateway.Integration(
+integration = aws.apigatewayv2.Integration(
     f"{prefix}-integration",
-    rest_api=api_gate_way.id,
-    resource_id=resource.id,
-    http_method=method.http_method,
-    type="HTTP_PROXY",
-    integration_http_method="GET",
-    uri=nlb.dns_name.apply(lambda dns: f"http://{dns}"),
-    connection_type="VPC_LINK",
-    connection_id=apigw_link_lb.id,
+    api_id=api_gate_way.id,
+    integration_type="HTTP_PROXY",
+    integration_uri=alb_listener.arn,
+    integration_method="ANY",
+    payload_format_version="1.0",
+    opts=pulumi.ResourceOptions(depends_on=[api_gate_way]),
 )
 
 
-deployment = aws.apigateway.Deployment(
+default_route = aws.apigatewayv2.Route(
+    f"{prefix}-default-route",
+    api_id=api_gate_way.id,
+    route_key="$default",
+    target=pulumi.Output.concat("integrations/", integration.id),
+)
+
+deployment = aws.apigatewayv2.Deployment(
     f"{prefix}-deployment",
-    rest_api=api_gate_way.id,
-    stage_name=stack_name,
-    opts=pulumi.ResourceOptions(depends_on=[api_gate_way_integration]),
+    api_id=api_gate_way.id,
+    opts=pulumi.ResourceOptions(depends_on=[default_route]),
+)
+
+stage = aws.apigatewayv2.Stage(
+    f"{prefix}-http_api_stage",
+    api_id=api_gate_way.id,
+    deployment_id=deployment.id,
+    name=stack_name,
+    auto_deploy=True,
 )
