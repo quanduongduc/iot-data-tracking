@@ -1,0 +1,1 @@
+pulumi up --stack=quanduongduc/fastapi-ecs/role --cwd=./deployment/infrastructure/role/ --yes

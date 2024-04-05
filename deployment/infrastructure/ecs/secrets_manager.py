@@ -1,7 +1,7 @@
 import json
 import pulumi
 import pulumi_aws as aws
-from environment import prefix, stack_name
+from infrastructure.environment import prefix, stack_name
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa

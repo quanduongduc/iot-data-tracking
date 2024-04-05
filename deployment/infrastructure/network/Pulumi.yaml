@@ -1,0 +1,7 @@
+name: fastapi-ecs
+description:  Networking layer infrastructure (include vpc, loadbalancer and apigateway setup)
+main: ./api_gw.py
+runtime:
+  name: python
+  options:
+    virtualenv: ../../../venv

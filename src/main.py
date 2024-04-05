@@ -11,4 +11,4 @@ app_configs["default_response_class"] = ORJSONResponse  # set default response c
 app = FastAPI(**app_configs)
 
 
-app.get("/")(lambda: {"message": "Hello World!"})
+app.get("/health")(lambda: {"status": "ok"})
