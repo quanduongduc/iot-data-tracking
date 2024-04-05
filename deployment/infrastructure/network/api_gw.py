@@ -2,6 +2,7 @@ import pulumi
 import pulumi_aws as aws
 
 import sys
+
 sys.path.append("../../")
 
 from infrastructure.network.lb import alb_listener
@@ -54,6 +55,7 @@ stage = aws.apigatewayv2.Stage(
     f"{project_name}-http_api_stage",
     api_id=api_gate_way.id,
     deployment_id=deployment.id,
+    name="$default",
     auto_deploy=True,
 )
 

@@ -13,14 +13,14 @@ from infrastructure.ecs.secrets_manager import secret
 network_stack = pulumi.StackReference(f"{ref_prefix}/network")
 role_stack = pulumi.StackReference(f"{ref_prefix}/role")
 
-ecs_private_subnet1_id=network_stack.get_output("ecs_private_subnet1_id")
-ecs_private_subnet2_id=network_stack.get_output("ecs_private_subnet2_id")
-api_sg_id=network_stack.get_output("api_sg_id")
-vpc_id=network_stack.get_output("vpc_id")
-alb_listener_arn=network_stack.get_output("alb_listener_arn")
+ecs_private_subnet1_id = network_stack.get_output("ecs_private_subnet1_id")
+ecs_private_subnet2_id = network_stack.get_output("ecs_private_subnet2_id")
+api_sg_id = network_stack.get_output("api_sg_id")
+vpc_id = network_stack.get_output("vpc_id")
+alb_listener_arn = network_stack.get_output("alb_listener_arn")
 task_execution_role_arn = role_stack.get_output("task_execution_role_arn")
-ec2_api_role_name=role_stack.get_output("ec2_api_role_name")
-endpoint_url=network_stack.get_output("endpoint")
+ec2_api_role_name = role_stack.get_output("ec2_api_role_name")
+endpoint_url = network_stack.get_output("endpoint")
 
 cluster = aws.ecs.Cluster(f"{prefix}-cluster")
 repo = aws.ecr.Repository(
@@ -54,7 +54,9 @@ api_task_definition = aws.ecs.TaskDefinition(
     network_mode="bridge",
     requires_compatibilities=["EC2"],
     execution_role_arn=task_execution_role_arn,
-    container_definitions=pulumi.Output.all(api_image.image_uri, log_group.name, secret.name).apply(
+    container_definitions=pulumi.Output.all(
+        api_image.image_uri, log_group.name, secret.name
+    ).apply(
         lambda args: json.dumps(
             [
                 {
@@ -141,7 +143,9 @@ aws.lb.ListenerRule(
     conditions=[
         aws.lb.ListenerRuleConditionArgs(
             host_header=aws.lb.ListenerRuleConditionHostHeaderArgs(
-                values=[endpoint_url]
+                values=[
+                    "43bgcy1zak.execute-api.ap-northeast-1.amazonaws.com"
+                ]  # just for testing
             )
         )
     ],
