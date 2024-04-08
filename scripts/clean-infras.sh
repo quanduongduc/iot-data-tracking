@@ -1,2 +1,2 @@
+pulumi destroy --stack=quanduongduc/fastapi-ecs/dev --yes & pulumi destroy --stack=quanduongduc/fastapi-ecs/prod --yes & wait
 pulumi destroy --stack=quanduongduc/fastapi-ecs/network --yes  && pulumi destroy --stack=quanduongduc/fastapi-ecs/role --yes
-pulumi destroy --stack=quanduongduc/fastapi-ecs/dev --yes

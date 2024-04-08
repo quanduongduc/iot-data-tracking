@@ -42,7 +42,7 @@ secrets_dict = {
     "POSTGRES_PORT": DB_PORT,
     "POSTGRES_USER": DB_USER,
     "POSTGRES_DB": DB_NAME,
-    "JWT_ALG":JWT_ALG,
+    "JWT_ALG": JWT_ALG,
     "JWT_PRIVATE_KEY": JWT_PRIVATE_PEM.decode("utf-8"),
     "JWT_PUBLIC_KEY": JWT_PUBLIC_PEM.decode("utf-8"),
     "JWT_ACCESS_EXP": JWT_ACCESS_EXP,

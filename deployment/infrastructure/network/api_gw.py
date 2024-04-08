@@ -44,19 +44,5 @@ default_route = aws.apigatewayv2.Route(
     target=pulumi.Output.concat("integrations/", integration.id),
 )
 
-
-deployment = aws.apigatewayv2.Deployment(
-    f"{project_name}-deployment",
-    api_id=api_gate_way.id,
-    opts=pulumi.ResourceOptions(depends_on=[default_route]),
-)
-
-stage = aws.apigatewayv2.Stage(
-    f"{project_name}-http_api_stage",
-    api_id=api_gate_way.id,
-    deployment_id=deployment.id,
-    name="$default",
-    auto_deploy=True,
-)
-
-pulumi.export("endpoint", stage.invoke_url)
+pulumi.export("apigw_id", api_gate_way.id)
+pulumi.export("apigw_endpoint", api_gate_way.api_endpoint)

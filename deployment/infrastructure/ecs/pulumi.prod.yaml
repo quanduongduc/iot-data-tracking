@@ -1,7 +1,5 @@
-name: fastapi-ecs
-description:  A container running in AWS ECS Container Instance, using Python infrastructure as code
-main: ./ecs/main.py
-runtime:
-  name: python
-  options:
-    virtualenv: ../../venv
+config:
+  domain_name: 
+    type: string
+    description: Domain name for dev
+    value: dukwan.tokyo

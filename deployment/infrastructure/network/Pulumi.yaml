@@ -1,7 +1,13 @@
 name: fastapi-ecs
 description:  Networking layer infrastructure (include vpc, loadbalancer and apigateway setup)
-main: ./api_gw.py
+main: ./main.py
 runtime:
   name: python
   options:
     virtualenv: ../../../venv
+config:
+  domain_name: 
+    type: string
+    description: Primary domain name
+    value: "dukwan.tokyo"
+    

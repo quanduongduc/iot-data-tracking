@@ -2,6 +2,7 @@ import sys
 
 sys.path.append("../../")
 
+from infrastructure.utils import get_primary_domain
 import json
 import pulumi
 import pulumi_aws as aws
@@ -21,6 +22,9 @@ alb_listener_arn = network_stack.get_output("alb_listener_arn")
 task_execution_role_arn = role_stack.get_output("task_execution_role_arn")
 ec2_api_role_name = role_stack.get_output("ec2_api_role_name")
 endpoint_url = network_stack.get_output("endpoint")
+apigw_id = network_stack.get_output("apigw_id")
+hosted_zone_id = network_stack.get_output("hosted_zone_id")
+apigw_endpoint = network_stack.get_output("apigw_endpoint")
 
 cluster = aws.ecs.Cluster(f"{prefix}-cluster")
 repo = aws.ecr.Repository(
@@ -150,7 +154,6 @@ aws.lb.ListenerRule(
         )
     ],
     listener_arn=alb_listener_arn,
-    priority=10,
 )
 
 
@@ -190,4 +193,66 @@ api_service = aws.ecs.Service(
     ],
 )
 
-pulumi.export("secret_name", secret.name)
+config = pulumi.Config()
+domain_name = config.require_object("domain_name").get("value")
+primary_domain_name = get_primary_domain(domain_name)
+
+certificate = aws.acm.get_certificate(
+    domain=primary_domain_name,
+    statuses=["ISSUED"],
+)
+
+
+deployment = aws.apigatewayv2.Deployment(
+    f"{prefix}-deployment",
+    api_id=apigw_id,
+)
+
+apigw_stage = aws.apigatewayv2.Stage(
+    f"{prefix}-apigw-stage",
+    api_id=apigw_id,
+    deployment_id=deployment.id,
+    auto_deploy=True,
+    name=f"{stack_name}",
+    opts=pulumi.ResourceOptions(delete_before_replace=False),
+)
+
+
+apigw_domain_name = aws.apigatewayv2.DomainName(
+    f"{prefix}-apigw-domain-name",
+    domain_name=domain_name,
+    domain_name_configuration=aws.apigatewayv2.DomainNameDomainNameConfigurationArgs(
+        certificate_arn=certificate.arn,
+        endpoint_type="REGIONAL",
+        security_policy="TLS_1_2",
+    ),
+    opts=pulumi.ResourceOptions(delete_before_replace=True),
+)
+
+base_path_mapping_v2 = aws.apigatewayv2.ApiMapping(
+    f"{prefix}-base-path-mapping",
+    api_id=apigw_id,
+    stage=apigw_stage.name,
+    domain_name=apigw_domain_name.domain_name,
+    
+    opts=pulumi.ResourceOptions(
+        replace_on_changes=["stage"], delete_before_replace=True
+    ),
+)
+
+dns_record = aws.route53.Record(
+    f"{prefix}-apiGatewayDnsRecord",
+    zone_id=hosted_zone_id,
+    name=apigw_domain_name.domain_name,
+    type="A",
+    aliases=[
+        aws.route53.RecordAliasArgs(
+            name=apigw_domain_name.domain_name_configuration.target_domain_name,
+            zone_id=apigw_domain_name.domain_name_configuration.hosted_zone_id,
+            evaluate_target_health=True,
+        )
+    ],
+)
+
+
+pulumi.export(f"{stack_name}_endpoint", apigw_domain_name.domain_name)
