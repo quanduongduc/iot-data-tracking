@@ -19,4 +19,4 @@ cmd pulumi up
 
 **Topology**
 
-![ecs-fastapi (1)](https://github.com/quanduongduc/fastapi-ecs/assets/59951771/db7df046-0309-4a23-9c56-f4f5eb9a7aac)
+![ecs-fastapi - Page 1](https://github.com/quanduongduc/fastapi-ecs/assets/59951771/868fb25f-5cc1-4252-9784-3e7c149ed398)
