@@ -6,12 +6,11 @@ import os
 from typing import Any, List, Tuple, Type
 from boto3 import Session
 from botocore.exceptions import (
-    NoCredentialsError,
     ClientError,
-    NoCredentialsError,
     ParamValidationError,
     NoCredentialsError,
     ParamValidationError,
+    NoRegionError,
 )
 from pydantic.fields import FieldInfo
 from pydantic import AnyUrl, PostgresDsn, SecretStr
@@ -24,10 +23,6 @@ from pydantic_settings import (
 from src.constanst import Environment
 
 
-session = Session()
-secretsmanager_client = session.client(service_name="secretsmanager")
-
-
 @functools.lru_cache()
 def get_secret() -> dict[str, Any] | None:
     try:
@@ -36,7 +31,7 @@ def get_secret() -> dict[str, Any] | None:
         if not region:
             logging.error("AWS_DEFAULT_REGION environment variable is not set")
             return None
-        
+
         client = session.client(service_name="secretsmanager", region_name=region)
         secret_id = os.environ.get("AWS_SECRET_ID")
         if not secret_id:
@@ -47,11 +42,15 @@ def get_secret() -> dict[str, Any] | None:
         if "SecretString" in response:
             secret_dictionary = json.loads(response["SecretString"])
         else:
-            secret_dictionary = json.loads(
-                base64.b64decode(response["SecretBinary"]))
+            secret_dictionary = json.loads(base64.b64decode(response["SecretBinary"]))
         return secret_dictionary
-    except (ClientError, NoCredentialsError, ParamValidationError) as error:
-        if isinstance(error, (NoCredentialsError, ParamValidationError)):
+    except (
+        ClientError,
+        NoCredentialsError,
+        ParamValidationError,
+        NoRegionError,
+    ) as error:
+        if isinstance(error, (NoCredentialsError, ParamValidationError, NoRegionError)):
             logging.debug("AWS Secrets Manager: %s", error)
         else:
             message = f"{error.response['Error']['Code']} to secret"
