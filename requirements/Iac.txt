@@ -1,4 +1,4 @@
--r base.txt
 pulumi==3.111.1
 pulumi_awsx==2.6.0
 pulumi_random==4.16.0
+pulumi_synced_folder==0.11.1

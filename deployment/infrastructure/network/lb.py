@@ -5,11 +5,12 @@ from infrastructure.network.vpc import (
     ecs_private_subnet1,
     ecs_private_subnet2,
     alb_sg,
+    mqtt_lb_sg,
 )
 
 alb = aws.lb.LoadBalancer(
     f"{project_name}-alb",
-    internal=True,
+    internal=False,
     subnets=[ecs_private_subnet1, ecs_private_subnet2],
     security_groups=[alb_sg.id],
     load_balancer_type="application",

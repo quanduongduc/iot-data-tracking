@@ -11,21 +11,22 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import declarative_base
 
-POSTGRES_INDEXES_NAMING_CONVENTION = {
+NAMING_CONVENTION = {
     "ix": "%(column_0_label)s_idx",
     "uq": "%(table_name)s_%(column_0_name)s_key",
     "ck": "%(table_name)s_%(constraint_name)s_check",
     "fk": "%(table_name)s_%(column_0_name)s_fkey",
     "pk": "%(table_name)s_pkey",
 }
-metadata = MetaData(naming_convention=POSTGRES_INDEXES_NAMING_CONVENTION)
+metadata = MetaData(naming_convention=NAMING_CONVENTION)
 
 
 Base = declarative_base(metadata=metadata)
 
+
 class DatabaseSessionManager:
-    def __init__(self, host: str, engine_kwargs: dict[str, Any] = {}):
-        self._engine = create_async_engine(host, **engine_kwargs)
+    def __init__(self, url: str, engine_kwargs: dict[str, Any] = {}):
+        self._engine = create_async_engine(url, **engine_kwargs)
         self._sessionmaker = async_sessionmaker(autocommit=False, bind=self._engine)
 
     async def close(self):
@@ -63,11 +64,12 @@ class DatabaseSessionManager:
             await session.close()
 
 
-sessionmanager = DatabaseSessionManager(
-    settings.database_url, {"echo": settings.echo_sql}
-)
+sessionmanager = DatabaseSessionManager(settings.MYSQL_DSN)
 
 
 async def get_db_session():
     async with sessionmanager.session() as session:
         yield session
+
+
+from src.models import *

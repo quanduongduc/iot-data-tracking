@@ -84,7 +84,6 @@ alb_sg = aws.ec2.SecurityGroup(
 
 api_sg = aws.ec2.SecurityGroup(
     f"{prefix}-api-sg",
-    name_prefix=prefix,
     vpc_id=vpc.id,
     description="Allow port for API",
     ingress=[
@@ -111,6 +110,100 @@ api_sg = aws.ec2.SecurityGroup(
             protocol="-1",
             cidr_blocks=["0.0.0.0/0"],
         ),
+    ],
+)
+
+mqtt_lb_sg = aws.ec2.SecurityGroup(
+    f"{prefix}-mqtt-lb-sg",
+    vpc_id=vpc.id,
+    description="Allow port for load balancer",
+    ingress=[
+        aws.ec2.SecurityGroupIngressArgs(
+            description="HTTP from loadbalancer",
+            from_port=0,
+            to_port=0,
+            protocol="-1",
+            cidr_blocks=["0.0.0.0/0"],
+        ),
+    ],
+    egress=[
+        aws.ec2.SecurityGroupEgressArgs(
+            description="Outbound access to anywhere for any protocol",
+            from_port=0,
+            to_port=0,
+            protocol="-1",
+            cidr_blocks=["0.0.0.0/0"],
+        ),
+    ],
+)
+
+mqtt_sg = aws.ec2.SecurityGroup(
+    f"{prefix}-mqtt-sg",
+    vpc_id=vpc.id,
+    description="Allow port for mqtt broker",
+    ingress=[
+        aws.ec2.SecurityGroupIngressArgs(
+            description="SSH from anywhere",
+            from_port=22,
+            to_port=22,
+            protocol=aws.ec2.ProtocolType.TCP,
+            cidr_blocks=["0.0.0.0/0"],
+        ),
+        aws.ec2.SecurityGroupIngressArgs(
+            description="HTTP from loadbalancer",
+            from_port=1883,
+            to_port=1884,
+            protocol=aws.ec2.ProtocolType.TCP,
+            security_groups=[mqtt_lb_sg.id],
+        ),
+    ],
+    egress=[
+        aws.ec2.SecurityGroupEgressArgs(
+            description="Outbound access to anywhere for any protocol",
+            from_port=0,
+            to_port=0,
+            protocol="-1",
+            cidr_blocks=["0.0.0.0/0"],
+        ),
+    ],
+)
+
+data_generator_sg = aws.ec2.SecurityGroup(
+    f"{prefix}-data-generator-sg",
+    vpc_id=vpc.id,
+    description="Allow data generator to access other services",
+    ingress=[
+        aws.ec2.SecurityGroupIngressArgs(
+            description="SSH from anywhere",
+            from_port=22,
+            to_port=22,
+            protocol=aws.ec2.ProtocolType.TCP,
+            cidr_blocks=["0.0.0.0/0"],
+        )
+    ],
+    egress=[
+        aws.ec2.SecurityGroupEgressArgs(
+            description="Outbound access to anywhere for any protocol",
+            from_port=0,
+            to_port=0,
+            protocol="-1",
+            cidr_blocks=["0.0.0.0/0"],
+        ),
+    ],
+)
+
+rds_sg = aws.ec2.SecurityGroup(
+    f"{prefix}-rds-sg",
+    vpc_id=vpc.id,
+    description="Allow access to RDS",
+    ingress=[
+        aws.ec2.SecurityGroupIngressArgs(
+            description="Allow port for mysql rds",
+            from_port=3306,
+            to_port=3306,
+            protocol=aws.ec2.ProtocolType.TCP,
+            security_groups=[api_sg.id, data_generator_sg.id],
+        )
     ],
 )
 
@@ -146,6 +239,11 @@ alb_sg_egrees = aws.ec2.SecurityGroupRule(
 
 pulumi.export("ecs_private_subnet1_id", ecs_private_subnet1.id)
 pulumi.export("ecs_private_subnet2_id", ecs_private_subnet2.id)
+pulumi.export("ecs_public_subnet_id", ecs_public_subnet.id)
 pulumi.export("api_sg_id", api_sg.id)
 pulumi.export("vpc_id", vpc.id)
 pulumi.export("alb_sg_id", alb_sg.id)
+pulumi.export("mqtt_lb_sg_id", mqtt_lb_sg.id)
+pulumi.export("mqtt_sg_id", mqtt_sg.id)
+pulumi.export("data_generator_sg_id", data_generator_sg.id)
+pulumi.export("rds_sg_id", rds_sg.id)

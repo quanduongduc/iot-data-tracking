@@ -89,11 +89,15 @@ s3_read_policy = aws.iam.Policy(
             "Version": "2012-10-17",
             "Statement": [
                 {
-                    "Action": ["s3:GetObject", "s3:ListBucket"],
+                    "Action": ["s3:GetObject", "s3:ListBucket", "s3:ListObjectsv2"],
                     "Resource": [
                         get_arn_template(
                             service="s3",
                             resource_name=f"{project_name}-*/*",
+                        ),
+                        get_arn_template(
+                            service="s3",
+                            resource_name=f"{project_name}-*",
                         ),
                     ],
                     "Effect": "Allow",
@@ -181,6 +185,30 @@ ec2_api_role = aws.iam.Role(
     ],
 )
 
+data_generator_role = aws.iam.Role(
+    f"{project_name}-data-generator-role",
+    assume_role_policy=json.dumps(
+        {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Action": "sts:AssumeRole",
+                    "Principal": {"Service": "ec2.amazonaws.com"},
+                    "Effect": "Allow",
+                    "Sid": "",
+                }
+            ],
+        }
+    ),
+    managed_policy_arns=[
+        s3_read_policy.arn,
+        secret_manager_policy.arn,
+        cloudwatch_policy.arn,
+        ecs_registration_policy.arn,
+    ],
+)
+
 
 pulumi.export("task_execution_role_arn", task_execution_role.arn)
 pulumi.export("ec2_api_role_name", ec2_api_role.name)
+pulumi.export("ec2_data_generator_role_name", data_generator_role.name)

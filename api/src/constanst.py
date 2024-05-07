@@ -14,5 +14,9 @@ class Environment(str, Enum):
     def is_production(self) -> bool:
         return self in (self.PRODUCTION)
 
+    @property
+    def is_local(self) -> bool:
+        return self in (self.LOCAL)
 
-SHOW_DOCS_ENVIRONMENT = {Environment.DEVELOPMENT}
+
+SHOW_DOCS_ENVIRONMENT = {Environment.DEVELOPMENT, Environment.LOCAL}

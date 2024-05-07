@@ -39,4 +39,4 @@ worker_tmp_dir = "/dev/shm"
 graceful_timeout = int(graceful_timeout_str)
 timeout = int(timeout_str)
 keepalive = int(keepalive_str)
-logconfig = os.getenv("LOG_CONFIG", "./logging.prod.ini")
+logconfig = os.getenv("LOG_CONFIG", "logging.prod.ini")

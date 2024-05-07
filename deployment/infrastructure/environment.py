@@ -1,6 +1,10 @@
+import os
 import pulumi
 import pulumi_aws as aws
+from pathlib import Path
 
+
+root_dir_relative = "../../.."
 project_name = pulumi.get_project()
 stack_name = pulumi.get_stack()
 orgranization = pulumi.get_organization()

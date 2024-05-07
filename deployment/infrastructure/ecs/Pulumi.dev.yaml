@@ -3,3 +3,7 @@ config:
     type: string
     description: Domain name for dev
     value:  dev.dukwan.tokyo
+  source_data_path:
+    type: string
+    description: Folder path contains source data
+    value: /home/vagrant/Programming/weather-tracking/data

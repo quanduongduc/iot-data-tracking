@@ -5,13 +5,8 @@ from infrastructure.environment import prefix, stack_name
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric import rsa
-import pulumi_random as random
 
 ENVIRONMENT = stack_name.upper()
-DB_PASSWORD = random.RandomPassword(f"{prefix}-db-password", length=30, special=True)
-DB_PORT = 5432
-DB_USER = "fastapi_user"
-DB_NAME = "fastapi_ecs"
 
 JWT_PRIVATE_KEY = rsa.generate_private_key(
     public_exponent=65537, key_size=2048, backend=default_backend()
@@ -36,12 +31,15 @@ JWT_REFRESH_EXP = 3600 * 24 * 7
 CORS_HEADERS = ["*"]
 CORS_ORIGINS = ["*"]
 
+
+secret = aws.secretsmanager.Secret(f"{prefix}-secret")
+
+from infrastructure.ecs.mosquitto import mosquitto_nlb, mosquitto_nlb_mqtt_listener
+from infrastructure.ecs.s3 import source_data_bucket
+from infrastructure.ecs.rds import rds_instance
+
 secrets_dict = {
     "ENVIRONMENT": ENVIRONMENT,
-    "POSTGRES_HOST": "localhost",  # "localhost" is a placeholder, the actual value will be replaced by the DATABASE CLUSTER ENDPOINT
-    "POSTGRES_PORT": DB_PORT,
-    "POSTGRES_USER": DB_USER,
-    "POSTGRES_DB": DB_NAME,
     "JWT_ALG": JWT_ALG,
     "JWT_PRIVATE_KEY": JWT_PRIVATE_PEM.decode("utf-8"),
     "JWT_PUBLIC_KEY": JWT_PUBLIC_PEM.decode("utf-8"),
@@ -49,14 +47,36 @@ secrets_dict = {
     "JWT_REFRESH_EXP": JWT_REFRESH_EXP,
     "CORS_HEADERS": CORS_HEADERS,
     "CORS_ORIGINS": CORS_ORIGINS,
+    "MQTT_SOURCE_TOPIC": "weather/data",
 }
 
-secret = aws.secretsmanager.Secret(f"{prefix}-secret")
+
 secret_version = aws.secretsmanager.SecretVersion(
     f"{prefix}-secret-version",
     secret_id=secret.id,
-    secret_string=DB_PASSWORD.result.apply(
-        lambda pwd: json.dumps({**secrets_dict, "POSTGRES_PASSWORD": pwd})
+    secret_string=pulumi.Output.all(
+        mosquitto_nlb.dns_name,
+        source_data_bucket.bucket,
+        rds_instance.address,
+        rds_instance.port,
+        rds_instance.username,
+        rds_instance.password,
+        rds_instance.db_name,
+        mosquitto_nlb_mqtt_listener.port,
+    ).apply(
+        lambda args: json.dumps(
+            {
+                **secrets_dict,
+                "MQTT_BROKER_HOST": args[0],
+                "S3_SOURCE_DATA_BUCKET": args[1],
+                "MYSQL_HOST": args[2],
+                "MYSQL_PORT": args[3],
+                "MYSQL_USER": args[4],
+                "MYSQL_PASSWORD": args[5],
+                "MYSQL_DB": args[6],
+                "MQTT_BROKER_PORT": args[7],
+            }
+        ),
     ),
 )
 

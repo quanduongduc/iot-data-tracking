@@ -3,24 +3,24 @@ import functools
 import json
 import logging
 import os
-from typing import Any, List, Tuple, Type
+from typing import Any, Tuple, Type
 from boto3 import Session
 from botocore.exceptions import (
+    NoCredentialsError,
     ClientError,
+    NoCredentialsError,
     ParamValidationError,
     NoCredentialsError,
     ParamValidationError,
     NoRegionError,
 )
+from pydantic import MySQLDsn, SecretStr
 from pydantic.fields import FieldInfo
-from pydantic import AnyUrl, PostgresDsn, SecretStr
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
     EnvSettingsSource,
 )
-
-from src.constanst import Environment
 
 
 @functools.lru_cache()
@@ -70,41 +70,30 @@ class SecretManagerSource(EnvSettingsSource):
 
 
 class AppSettings(BaseSettings):
-    ENVIRONMENT: Environment
+    S3_SOURCE_DATA_BUCKET: str
 
-    JWT_ALG: str
-    JWT_ACCESS_EXP: int
-    JWT_REFRESH_EXP: int
-    JWT_PUBLIC_KEY: SecretStr
-    JWT_PRIVATE_KEY: SecretStr
+    MQTT_BROKER_HOST: str
+    MQTT_BROKER_PORT: int = 1883
+    MQTT_SOURCE_TOPIC: str
 
-    CORS_HEADERS: List[str]
-    CORS_ORIGINS: List[str]
-
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: SecretStr
-    POSTGRES_HOST: str
-    POSTGRES_PORT: int
-    POSTGRES_DB: str
+    MYSQL_USER: str
+    MYSQL_PASSWORD: SecretStr
+    MYSQL_HOST: str
+    MYSQL_PORT: int
+    MYSQL_DB: str
 
     @property
-    def postgres_dsn(self) -> PostgresDsn:
-        return PostgresDsn.build(
-            scheme="postgresql",
-            user=self.POSTGRES_USER,
-            password=self.POSTGRES_PASSWORD.get_secret_value(),
-            host=self.POSTGRES_HOST,
-            port=self.POSTGRES_PORT,
-            path=f"/{self.POSTGRES_DB}",
+    def MYSQL_DSN(self) -> str:
+        return str(
+            MySQLDsn.build(
+                scheme="mysql+aiomysql",
+                username=self.MYSQL_USER,
+                password=self.MYSQL_PASSWORD.get_secret_value(),
+                host=self.MYSQL_HOST,
+                port=self.MYSQL_PORT,
+                path=self.MYSQL_DB,
+            )
         )
-
-    @property
-    def is_production(self) -> bool:
-        return self.ENVIRONMENT.is_production
-
-    @property
-    def is_development(self) -> bool:
-        return self.ENVIRONMENT.is_development
 
     @classmethod
     def settings_customise_sources(
