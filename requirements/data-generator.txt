@@ -1,7 +1,7 @@
 aiomqtt==2.1.0
-boto3==1.34.93
 orjson==3.10.1
 pydantic==2.7.1
 pandas==2.2.2
 pydantic-settings==2.2.1
 aiomysql==0.2.0
+aioboto3==12.4.0

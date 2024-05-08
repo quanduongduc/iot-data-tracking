@@ -20,7 +20,7 @@ ecs_private_subnet2_id = network_stack.get_output("ecs_private_subnet2_id")
 vpc_id = network_stack.get_output("vpc_id")
 task_execution_role_arn = role_stack.get_output("task_execution_role_arn")
 ec2_data_generator_role_name = role_stack.get_output("ec2_data_generator_role_name")
-data_generator_sg_id = role_stack.get_output("data_generator_sg_id")
+data_generator_sg_id = network_stack.get_output("data_generator_sg_id")
 
 data_generator_image = awsx.ecr.Image(
     f"{prefix}-dg-image",

@@ -208,7 +208,75 @@ data_generator_role = aws.iam.Role(
     ],
 )
 
+msk_policy = aws.iam.Policy(
+    f"{project_name}-msk-policy",
+    policy=json.dumps(
+        {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "kafka-cluster:Connect",
+                        "kafka-cluster:DescribeCluster",
+                    ],
+                    "Resource": [
+                        get_arn_template("kafka", f"cluster/{project_name}-*")
+                    ],
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "kafka-cluster:WriteData",
+                        "kafka-cluster:DescribeTopic",
+                    ],
+                    "Resource": [get_arn_template("kafka", f"topic/{project_name}-*")],
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "kafka-cluster:CreateTopic",
+                        "kafka-cluster:WriteData",
+                        "kafka-cluster:ReadData",
+                        "kafka-cluster:DescribeTopic",
+                    ],
+                    "Resource": [get_arn_template("kafka", f"topic/{project_name}-*")],
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "kafka-cluster:AlterGroup",
+                        "kafka-cluster:DescribeGroup",
+                    ],
+                    "Resource": [
+                        get_arn_template("kafka", f"group/{project_name}-*"),
+                        get_arn_template("kafka", f"group/{project_name}-*"),
+                    ],
+                },
+            ],
+        }
+    ),
+)
+msk_connector_service_role = aws.iam.Role(
+    f"{project_name}-msk-service-role",
+    assume_role_policy=json.dumps(
+        {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Action": "sts:AssumeRole",
+                    "Principal": {"Service": "kafkaconnect.amazonaws.com"},
+                    "Effect": "Allow",
+                    "Sid": "",
+                }
+            ],
+        }
+    ),
+    managed_policy_arns=[msk_policy.arn],
+)
+
 
 pulumi.export("task_execution_role_arn", task_execution_role.arn)
 pulumi.export("ec2_api_role_name", ec2_api_role.name)
 pulumi.export("ec2_data_generator_role_name", data_generator_role.name)
+pulumi.export("msk_connector_service_role_arn", msk_connector_service_role.arn)
