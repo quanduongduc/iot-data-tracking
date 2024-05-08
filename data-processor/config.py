@@ -74,11 +74,11 @@ class AppSettings(BaseSettings):
 
     MQTT_BROKER: AnyUrl
     MQTT_BROKER_PORT: int
-    
+
     KAFKA_BOOTSTRAP_SERVERS: str
     KAFKA_WEATHER_DATA_TOPIC: str
     KAFKA_WEATHER_DATA_GROUP_ID: str
-    
+
     REDIS_HOST: str
     REDIS_PORT: int
     REDIS_DB: int
@@ -91,13 +91,15 @@ class AppSettings(BaseSettings):
 
     @property
     def MYSQL_dsn(self) -> MySQLDsn:
-        return PostgresDsn.build(
-            scheme="postgresql",
-            user=self.POSTGRES_USER,
-            password=self.POSTGRES_PASSWORD.get_secret_value(),
-            host=self.POSTGRES_HOST,
-            port=self.POSTGRES_PORT,
-            path=f"/{self.POSTGRES_DB}",
+        return str(
+            MySQLDsn.build(
+                scheme="mysql+aiomysql",
+                username=self.MYSQL_USER,
+                password=self.MYSQL_PASSWORD.get_secret_value(),
+                host=self.MYSQL_HOST,
+                port=self.MYSQL_PORT,
+                path=self.MYSQL_DB,
+            )
         )
 
     @property

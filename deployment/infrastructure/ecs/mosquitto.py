@@ -17,6 +17,7 @@ from infrastructure.ecs.shared_ecs import (
 
 ecs_private_subnet1_id = network_stack.get_output("ecs_private_subnet1_id")
 ecs_private_subnet2_id = network_stack.get_output("ecs_private_subnet2_id")
+ecs_public_subnet_id = network_stack.get_output("ecs_public_subnet_id")
 mqtt_sg_id = network_stack.get_output("mqtt_sg_id")
 mqtt_lb_sg_id = network_stack.get_output("mqtt_lb_sg_id")
 vpc_id = network_stack.get_output("vpc_id")
@@ -98,11 +99,10 @@ mqtt_launch_config = aws.ec2.LaunchConfiguration(
     ),
 )
 
-
 mosquitto_nlb = aws.lb.LoadBalancer(
     f"{prefix}-mqtt-nlb",
     internal=False,
-    subnets=[ecs_private_subnet1_id, ecs_private_subnet2_id],
+    subnets=[ecs_public_subnet_id],
     security_groups=[mqtt_lb_sg_id],
     load_balancer_type="network",
     opts=pulumi.ResourceOptions(delete_before_replace=True),

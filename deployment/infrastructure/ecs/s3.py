@@ -1,6 +1,4 @@
 import json
-import os
-import pulumi_synced_folder
 from infrastructure.environment import prefix
 import pulumi
 import pulumi_aws as aws
@@ -82,13 +80,13 @@ s3_bucket_policy_attachment = aws.s3.BucketPolicy(
     opts=pulumi.ResourceOptions(retain_on_delete=True),
 )
 
-if not os.path.exists(source_data_path):
-    raise ValueError(f"{source_data_path} does not exist")
+# if not os.path.exists(source_data_path):
+#     raise ValueError(f"{source_data_path} does not exist")
 
-folder = pulumi_synced_folder.S3BucketFolder(
-    f"{prefix}-synced-folder",
-    path=source_data_path,
-    bucket_name=source_data_bucket.bucket,
-    acl=aws.s3.CannedAcl.PRIVATE,
-    opts=pulumi.ResourceOptions(retain_on_delete=True),
-)
+# folder = pulumi_synced_folder.S3BucketFolder(
+#     f"{prefix}-synced-folder",
+#     path=source_data_path,
+#     bucket_name=source_data_bucket.bucket,
+#     acl=aws.s3.CannedAcl.PRIVATE,
+#     opts=pulumi.ResourceOptions(retain_on_delete=True),
+# )

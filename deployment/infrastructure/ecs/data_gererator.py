@@ -127,6 +127,7 @@ data_generator_capacity_provider = aws.ecs.CapacityProvider(
         ),
         managed_termination_protection="DISABLED",
     ),
+    opts=pulumi.ResourceOptions(delete_before_replace=True),
 )
 
 data_generator_service = aws.ecs.Service(
