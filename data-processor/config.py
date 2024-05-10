@@ -72,8 +72,10 @@ class SecretManagerSource(EnvSettingsSource):
 class AppSettings(BaseSettings):
     ENVIRONMENT: Environment
 
-    MQTT_BROKER: AnyUrl
-    MQTT_BROKER_PORT: int
+    MQTT_BROKER_HOST: str
+    MQTT_BROKER_PORT: int = 1883
+    MQTT_SOURCE_TOPIC: str
+    MQTT_PROCESSED_TOPIC: str
 
     KAFKA_BOOTSTRAP_SERVERS: str
     KAFKA_WEATHER_DATA_TOPIC: str

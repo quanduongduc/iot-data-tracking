@@ -34,10 +34,20 @@ CORS_ORIGINS = ["*"]
 
 secret = aws.secretsmanager.Secret(f"{prefix}-secret")
 
-from infrastructure.ecs.mosquitto import mosquitto_nlb, mosquitto_nlb_mqtt_listener
+from infrastructure.ecs.mosquitto import (
+    MQTT_PROCESSED_TOPIC,
+    MQTT_SOURCE_TOPIC,
+    mosquitto_nlb,
+    mosquitto_nlb_mqtt_listener,
+)
 from infrastructure.ecs.s3 import source_data_bucket
 from infrastructure.ecs.rds import rds_instance
-from infrastructure.ecs.msk import msk_cluster
+from infrastructure.ecs.msk import (
+    KAFKA_WEATHER_DATA_GROUP_ID,
+    KAFKA_WEATHER_DATA_TOPIC,
+    msk_cluster,
+)
+from infrastructure.ecs.cache import elasticache_cluster
 
 secrets_dict = {
     "ENVIRONMENT": ENVIRONMENT,
@@ -48,7 +58,11 @@ secrets_dict = {
     "JWT_REFRESH_EXP": JWT_REFRESH_EXP,
     "CORS_HEADERS": CORS_HEADERS,
     "CORS_ORIGINS": CORS_ORIGINS,
-    "MQTT_SOURCE_TOPIC": "weather/data",
+    "MQTT_SOURCE_TOPIC": MQTT_SOURCE_TOPIC,
+    "MQTT_PROCESSED_TOPIC": MQTT_PROCESSED_TOPIC,
+    "KAFKA_WEATHER_DATA_TOPIC": KAFKA_WEATHER_DATA_TOPIC,
+    "KAFKA_WEATHER_DATA_GROUP_ID": KAFKA_WEATHER_DATA_GROUP_ID,
+    "REDIS_DB": "0",
 }
 
 
@@ -65,6 +79,8 @@ secret_version = aws.secretsmanager.SecretVersion(
         rds_instance.db_name,
         mosquitto_nlb_mqtt_listener.port,
         msk_cluster.bootstrap_brokers,
+        elasticache_cluster.cache_nodes[0].address,
+        elasticache_cluster.port,
     ).apply(
         lambda args: json.dumps(
             {
@@ -78,8 +94,8 @@ secret_version = aws.secretsmanager.SecretVersion(
                 "MYSQL_DB": args[6],
                 "MQTT_BROKER_PORT": args[7],
                 "KAFKA_BOOTSTRAP_SERVERS": args[8],
-                "KAFKA_WEATHER_DATA_TOPIC": args[9],
-                "KAFKA_WEATHER_DATA_GROUP_ID": args[10],
+                "REDIS_HOST": args[9],
+                "REDIS_PORT": args[10],
             }
         ),
     ),

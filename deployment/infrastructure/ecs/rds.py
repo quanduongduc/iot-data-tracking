@@ -16,9 +16,8 @@ rds_subnet_group = aws.rds.SubnetGroup(
 )
 
 db_password = random.RandomPassword(
-    f"{prefix}-db-password",
-    override_special="#-+^&*()",
-    length=30).result
+    f"{prefix}-db-password", special=False, length=30
+).result
 
 rds_instance = aws.rds.Instance(
     f"{prefix}-rds-instance",

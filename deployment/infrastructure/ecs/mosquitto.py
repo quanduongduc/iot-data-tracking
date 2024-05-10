@@ -206,3 +206,6 @@ mqtt_service = aws.ecs.Service(
         )
     ],
 )
+
+MQTT_SOURCE_TOPIC = "weather/data"
+MQTT_PROCESSED_TOPIC = "weather/processed"

@@ -279,4 +279,5 @@ msk_connector_service_role = aws.iam.Role(
 pulumi.export("task_execution_role_arn", task_execution_role.arn)
 pulumi.export("ec2_api_role_name", ec2_api_role.name)
 pulumi.export("ec2_data_generator_role_name", data_generator_role.name)
-pulumi.export("msk_connector_service_role_arn", msk_connector_service_role.arn)
+pulumi.export("ec2_data_processor_role_name", ec2_api_role.name)
+pulumi.export("ec2_kafka_bridge_role_name", ec2_api_role.name)

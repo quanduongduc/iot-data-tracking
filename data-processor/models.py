@@ -6,7 +6,6 @@ from datetime import datetime
 
 class WeatherData(BaseModel):
     location: str
-    time: datetime
     Date: datetime
     Latitude: float
     Longitude: float
@@ -24,7 +23,7 @@ class WeatherData(BaseModel):
 
 class StoreWeatherData(BaseModel):
     location: str
-    time: datetime
+    Date: datetime
     Latitude: float
     Longitude: float
     cld: float
@@ -41,7 +40,7 @@ class StoreWeatherData(BaseModel):
 
 class PublishWeatherData(BaseModel):
     location: str
-    time: datetime
+    Date: datetime
     Latitude: float
     Longitude: float
     cld: float

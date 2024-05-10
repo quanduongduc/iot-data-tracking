@@ -74,6 +74,7 @@ async def publish_data(
                 while True:
                     for data in source_data:
                         data["Date"] = datetime.now(UTC).isoformat()
+                        data["location"] = location_id
                         await client.publish(
                             topic=f"{settings.MQTT_SOURCE_TOPIC}/{location_id}",
                             payload=orjson.dumps(data),

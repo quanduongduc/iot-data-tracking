@@ -237,6 +237,90 @@ alb_sg_egrees = aws.ec2.SecurityGroupRule(
     source_security_group_id=api_sg.id,
 )
 
+kafka_bridge_sg = aws.ec2.SecurityGroup(
+    f"{prefix}-msk-client-sg",
+    vpc_id=vpc.id,
+    description="Allow access to MSK",
+    ingress=[
+        aws.ec2.SecurityGroupIngressArgs(
+            description="SSH from anywhere",
+            from_port=22,
+            to_port=22,
+            protocol=aws.ec2.ProtocolType.TCP,
+            cidr_blocks=["0.0.0.0/0"],
+        ),
+    ],
+    egress=[
+        aws.ec2.SecurityGroupEgressArgs(
+            description="Outbound access to anywhere for any protocol",
+            from_port=0,
+            to_port=0,
+            protocol="-1",
+            cidr_blocks=["0.0.0.0/0"],
+        ),
+    ],
+)
+
+data_processor_sg = aws.ec2.SecurityGroup(
+    f"{prefix}-data-processor-sg",
+    vpc_id=vpc.id,
+    description="Allow access to data processor",
+    ingress=[
+        # aws.ec2.SecurityGroupIngressArgs(
+        #     description="Outbound access to anywhere for any protocol",
+        #     from_port=0,
+        #     to_port=0,
+        #     protocol="-1",
+        #     cidr_blocks=[kafka_bridge_sg.id, data_generator_sg.id],
+        # )
+        aws.ec2.SecurityGroupIngressArgs(
+            description="SSH from anywhere",
+            from_port=22,
+            to_port=22,
+            protocol=aws.ec2.ProtocolType.TCP,
+            cidr_blocks=["0.0.0.0/0"],
+        )
+    ],
+    egress=[
+        aws.ec2.SecurityGroupEgressArgs(
+            description="Outbound access to anywhere for any protocol",
+            from_port=0,
+            to_port=0,
+            protocol="-1",
+            cidr_blocks=["0.0.0.0/0"],
+        )
+    ],
+)
+
+msk_sg = aws.ec2.SecurityGroup(
+    f"{prefix}-msk-sg",
+    vpc_id=vpc.id,
+    description="Allow access to MSK",
+    ingress=[
+        aws.ec2.SecurityGroupIngressArgs(
+            description="Allow port for msk",
+            from_port=9092,
+            to_port=9092,
+            protocol=aws.ec2.ProtocolType.TCP,
+            security_groups=[
+                api_sg.id,
+                data_generator_sg.id,
+                data_processor_sg.id,
+                kafka_bridge_sg.id,
+            ],
+        )
+    ],
+    egress=[
+        aws.ec2.SecurityGroupEgressArgs(
+            description="Outbound access to anywhere for any protocol",
+            from_port=0,
+            to_port=0,
+            protocol="-1",
+            cidr_blocks=["0.0.0.0/0"],
+        ),
+    ],
+)
+
 pulumi.export("ecs_private_subnet1_id", ecs_private_subnet1.id)
 pulumi.export("ecs_private_subnet2_id", ecs_private_subnet2.id)
 pulumi.export("ecs_public_subnet_id", ecs_public_subnet.id)
@@ -247,3 +331,6 @@ pulumi.export("mqtt_lb_sg_id", mqtt_lb_sg.id)
 pulumi.export("mqtt_sg_id", mqtt_sg.id)
 pulumi.export("data_generator_sg_id", data_generator_sg.id)
 pulumi.export("rds_sg_id", rds_sg.id)
+pulumi.export("msk_sg_id", msk_sg.id)
+pulumi.export("kafka_bridge_sg_id", kafka_bridge_sg.id)
+pulumi.export("data_processor_sg_id", data_processor_sg.id)

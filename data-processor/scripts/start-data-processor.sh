@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 if which python > /dev/null 2>&1; then
     python main.py
 else

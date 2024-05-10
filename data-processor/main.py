@@ -1,10 +1,16 @@
 from datetime import datetime
+import logging
+import uuid
+
+import orjson
 from config import settings
 from aiokafka import AIOKafkaConsumer
 import asyncio
 from redis_db import async_hset_cache, async_redis
 from db import get_db_connection
 from models import WeatherData, StoreWeatherData, PublishWeatherData
+from aiomqtt import Client
+from aiokafka import TopicPartition
 
 
 async def consume():
@@ -15,18 +21,29 @@ async def consume():
     )
     await consumer.start()
     try:
-        async for msg in consumer:
-            weather_data = WeatherData(**msg.value)
+        client_id = uuid.uuid4().hex
+        async with Client(
+            identifier=client_id,
+            hostname=settings.MQTT_BROKER_HOST,
+            port=settings.MQTT_BROKER_PORT,
+        ) as client:
+            async for msg in consumer:
+                dict_data = orjson.loads(msg.value)
+                if not dict_data["pet"]:
+                    logging.error(f"Invalid message: {dict_data}")
+                weather_data = WeatherData(**dict_data)
 
-            if not await message_validator(weather_data):
-                continue
+                if not await message_validator(weather_data):
+                    continue
 
-            processed_message = weather_data_processor(weather_data)
+                processed_message = weather_data_processor(weather_data)
 
-            await asyncio.gather(
-                store_weather_data(processed_message),
-                publish_weather_data(processed_message),
-            )
+                await asyncio.gather(
+                    store_weather_data(processed_message),
+                    publish_weather_data(mqtt_client=client, data=processed_message),
+                )
+    except Exception as e:
+        logging.error(f"Error while consuming message: {e}")
     finally:
         await consumer.stop()
 
@@ -38,7 +55,7 @@ async def message_validator(weather_data: WeatherData) -> bool:
         )
         if last_weather_data:
             last_weather_data = StoreWeatherData(**last_weather_data)
-            if last_weather_data.time > weather_data.time:
+            if last_weather_data.Date > weather_data.Date:
                 return False
     return True
 
@@ -46,7 +63,7 @@ async def message_validator(weather_data: WeatherData) -> bool:
 def weather_data_processor(weather_data: WeatherData) -> StoreWeatherData:
     return StoreWeatherData(
         location=weather_data.location,
-        time=weather_data.time,
+        Date=weather_data.Date,
         Latitude=weather_data.Latitude,
         Longitude=weather_data.Longitude,
         cld=weather_data.cld,
@@ -62,8 +79,11 @@ def weather_data_processor(weather_data: WeatherData) -> StoreWeatherData:
     )
 
 
-async def publish_weather_data(weather_data: PublishWeatherData):
-    pass
+async def publish_weather_data(client: Client, weather_data: PublishWeatherData):
+    await client.publish(
+        topic=f"{settings.MQTT_PROCESSED_TOPIC}/{weather_data.location}",
+        payload=orjson.dumps(weather_data.model_dump()),
+    )
 
 
 async def store_weather_data(weather_data: StoreWeatherData):

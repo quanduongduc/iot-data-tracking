@@ -6,7 +6,7 @@ from redis.exceptions import RedisError
 import redis.asyncio as redis
 from async_generator import asynccontextmanager
 
-from .config import settings
+from config import settings
 
 
 redis_pool = redis.ConnectionPool(

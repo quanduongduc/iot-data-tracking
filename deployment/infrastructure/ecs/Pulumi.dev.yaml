@@ -7,3 +7,7 @@ config:
     type: string
     description: Folder path contains source data
     value: /home/vagrant/Programming/weather-tracking/data
+  source_plugins_path:
+    type: string
+    description: Folder path contains source data
+    value: /home/vagrant/Programming/fastapi-ecs/deployment/infrastructure/ecs/plugins

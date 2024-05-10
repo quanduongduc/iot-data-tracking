@@ -22,8 +22,9 @@ package_info=$(pip show $package_name)
 
 # Check if the package information is valid
 if [ -z "$package_info" ]; then
-    echo "Error: Package '$package_name' not found."
-    exit 1
+    echo "Package '$package_name' not found. Installing..."
+    pip install $package_name
+    package_info=$(pip show $package_name)
 fi
 
 # Extract the name and version
@@ -34,4 +35,4 @@ version=$(echo "$package_info" | grep '^Version: ' | cut -d' ' -f2)
 echo "$name==$version" >> $requirements_path
 echo "Package '$name' with version '$version' added to '$requirements_path'."
 echo "preview of $requirements_path : "
-cat $requirements_path 
+cat $requirements_path
