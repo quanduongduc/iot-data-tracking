@@ -24,8 +24,8 @@ async def get_source_location(limit: int) -> dict:
 
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
+            await cur.execute("LOCK TABLES source_location WRITE, source_location READ")
             try:
-                await conn.begin()
                 fetch_query = "SELECT * FROM source_location WHERE is_active = 0 ORDER BY id ASC LIMIT %s FOR UPDATE"
                 await cur.execute(fetch_query, (limit,))
                 locations = await cur.fetchall()
@@ -42,10 +42,11 @@ async def get_source_location(limit: int) -> dict:
                     }
                     for location in locations
                 ]
-                return locations
-            except:
-                await conn.rollback()
-                raise
+            finally:
+                await cur.execute("UNLOCK TABLES")
+                await conn.commit()
+                
+            return locations
 
 
 async def list_source_files(limit: int) -> list[dict]:
