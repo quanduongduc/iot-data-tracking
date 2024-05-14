@@ -90,7 +90,7 @@ instance_profile = aws.iam.InstanceProfile(
 mqtt_launch_config = aws.ec2.LaunchConfiguration(
     f"{prefix}-mqtt-launch-config",
     image_id=ecs_optimized_ami_id,
-    instance_type="t2.small",
+    instance_type="t3.small",
     security_groups=[mqtt_sg_id],
     key_name="test",
     iam_instance_profile=instance_profile.arn,

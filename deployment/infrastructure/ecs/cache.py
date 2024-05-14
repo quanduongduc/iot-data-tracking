@@ -9,7 +9,7 @@ from infrastructure.environment import prefix
 
 ecs_private_subnet1_id = network_stack.get_output("ecs_private_subnet1_id")
 ecs_private_subnet2_id = network_stack.get_output("ecs_private_subnet2_id")
-cache_sg_id = network_stack.get_output("api_sg_id")
+cache_sg_id = network_stack.get_output("cache_sg_id")
 ec2_api_role_name = role_stack.get_output("ec2_api_role_name")
 
 cache_subnet_group = aws.elasticache.SubnetGroup(

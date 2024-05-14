@@ -10,7 +10,6 @@ import pulumi_awsx as awsx
 
 from infrastructure.environment import (
     prefix,
-    stack_name,
     region,
     root_dir_relative,
     stack_name,
@@ -32,7 +31,6 @@ vpc_id = network_stack.get_output("vpc_id")
 alb_listener_arn = network_stack.get_output("alb_listener_arn")
 task_execution_role_arn = role_stack.get_output("task_execution_role_arn")
 ec2_api_role_name = role_stack.get_output("ec2_api_role_name")
-endpoint_url = network_stack.get_output("endpoint")
 apigw_id = network_stack.get_output("apigw_id")
 hosted_zone_id = network_stack.get_output("hosted_zone_id")
 apigw_endpoint = network_stack.get_output("apigw_endpoint")
@@ -53,8 +51,8 @@ api_log_stream = aws.cloudwatch.LogStream(
 api_task_definition = aws.ecs.TaskDefinition(
     f"{prefix}-api-task",
     family=f"{prefix}-api-task",
-    cpu="256",
-    memory="256",
+    cpu="512",
+    memory="512",
     network_mode="bridge",
     requires_compatibilities=["EC2"],
     execution_role_arn=task_execution_role_arn,
@@ -93,7 +91,7 @@ api_instance_profile = aws.iam.InstanceProfile(
 api_launch_config = aws.ec2.LaunchConfiguration(
     f"{prefix}-api-launch-config",
     image_id=ecs_optimized_ami_id,
-    instance_type="t2.micro",
+    instance_type="t3.small",
     security_groups=[api_sg_id],
     key_name="test",
     iam_instance_profile=api_instance_profile.arn,
@@ -121,35 +119,16 @@ api_target_group = aws.lb.TargetGroup(
 api_auto_scaling_group = aws.autoscaling.Group(
     f"{prefix}-api-asg",
     launch_configuration=api_launch_config.id,
-    desired_capacity=5,
+    desired_capacity=4,
     health_check_type="ELB",
     min_size=3,
-    max_size=10,
+    max_size=5,
     vpc_zone_identifiers=[ecs_private_subnet1_id, ecs_private_subnet2_id],
     target_group_arns=[api_target_group.arn],
     opts=pulumi.ResourceOptions(
         depends_on=[api_launch_config], replace_on_changes=["launch_configuration"]
     ),
 )
-
-
-aws.lb.ListenerRule(
-    f"{prefix}-api-listener-rule",
-    actions=[
-        aws.lb.ListenerRuleActionArgs(
-            type="forward", target_group_arn=api_target_group.arn
-        )
-    ],
-    conditions=[
-        aws.lb.ListenerRuleConditionArgs(
-            path_pattern=aws.lb.ListenerRuleConditionPathPatternArgs(
-                values=[f"/{stack_name}/*"],
-            )
-        )
-    ],
-    listener_arn=alb_listener_arn,
-)
-
 
 api_capacity_provider = aws.ecs.CapacityProvider(
     f"{prefix}-api-capacity-provider",
@@ -168,7 +147,7 @@ api_service = aws.ecs.Service(
     f"{prefix}-api-service",
     cluster=cluster.arn,
     task_definition=api_task_definition.arn,
-    desired_count=3,
+    desired_count=5,
     capacity_provider_strategies=[
         aws.ecs.ServiceCapacityProviderStrategyArgs(
             capacity_provider=api_capacity_provider.name,
@@ -179,6 +158,9 @@ api_service = aws.ecs.Service(
     placement_constraints=[
         aws.ecs.ServicePlacementConstraintArgs(type="distinctInstance"),
     ],
+    opts=pulumi.ResourceOptions(
+        delete_before_replace=True,
+    ),
 )
 
 config = pulumi.Config()
@@ -201,8 +183,28 @@ apigw_stage = aws.apigatewayv2.Stage(
     api_id=apigw_id,
     deployment_id=deployment.id,
     auto_deploy=True,
-    name=f"{stack_name}",
+    name=stack_name,
     opts=pulumi.ResourceOptions(delete_before_replace=False),
+)
+
+
+aws.lb.ListenerRule(
+    f"{prefix}-api-listener-rule",
+    actions=[
+        aws.lb.ListenerRuleActionArgs(
+            type="forward",
+            target_group_arn=api_target_group.arn,
+        )
+    ],
+    priority=10,
+    conditions=[
+        aws.lb.ListenerRuleConditionArgs(
+            path_pattern=aws.lb.ListenerRuleConditionPathPatternArgs(
+                values=[f"/{stack_name}/*"],
+            )
+        )
+    ],
+    listener_arn=alb_listener_arn,
 )
 
 

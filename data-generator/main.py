@@ -7,56 +7,13 @@ import aiomqtt
 import aioboto3
 import orjson
 
-import aiomysql
 from config import settings
 
 
-async def get_source_location(limit: int) -> dict:
-    pool = await aiomysql.create_pool(
-        host=settings.MYSQL_HOST,
-        port=settings.MYSQL_PORT,
-        user=settings.MYSQL_USER,
-        password=settings.MYSQL_PASSWORD.get_secret_value(),
-        db=settings.MYSQL_DB,
-        autocommit=False,
-        loop=asyncio.get_event_loop(),
-    )
-
-    async with pool.acquire() as conn:
-        async with conn.cursor() as cur:
-            await cur.execute("LOCK TABLES source_location WRITE, source_location READ")
-            try:
-                fetch_query = "SELECT * FROM source_location WHERE is_active = 0 ORDER BY id ASC LIMIT %s FOR UPDATE"
-                await cur.execute(fetch_query, (limit,))
-                locations = await cur.fetchall()
-                location_ids = [str(location[0]) for location in locations]
-                location_ids_str = ", ".join(map(str, location_ids))
-                update_query = (
-                    "UPDATE source_location SET is_active = 1 WHERE id IN (%s)"
-                )
-                await cur.execute(update_query, (location_ids_str,))
-                await conn.commit()
-                locations = [
-                    {
-                        "location_name": location[1],
-                    }
-                    for location in locations
-                ]
-            finally:
-                await cur.execute("UNLOCK TABLES")
-                await conn.commit()
-                
-            return locations
-
-
-async def list_source_files(limit: int) -> list[dict]:
-    source_locations = await get_source_location(limit)
-    logging.info(f"Source locations: {source_locations}")
-    return source_locations
-
-
 async def publish_data(
-    session: aioboto3.Session, client_id: str, source_file_name: str
+    client: aiomqtt.Client,
+    session: aioboto3.Session,
+    source_file_name: str,
 ):
     async with session.client("s3") as s3:
         try:
@@ -65,30 +22,25 @@ async def publish_data(
             )
             source_data = orjson.loads(await response["Body"].read())
             frequency = 1  # 1 second
-            location_id = source_file_name.translate(str.maketrans("", "", ".json"))
+            location_id = source_file_name
             logging.info(f"Publishing data for location: {location_id}")
-            async with aiomqtt.Client(
-                identifier=client_id,
-                hostname=settings.MQTT_BROKER_HOST,
-                port=settings.MQTT_BROKER_PORT,
-            ) as client:
-                while True:
-                    for data in source_data:
-                        data["Date"] = datetime.now(UTC).isoformat()
-                        data["location"] = location_id
-                        await client.publish(
-                            topic=f"{settings.MQTT_SOURCE_TOPIC}/{location_id}",
-                            payload=orjson.dumps(data),
-                        )
-                        await asyncio.sleep(frequency)
+            while True:
+                for data in source_data:
+                    data["Date"] = datetime.now(UTC).replace(microsecond=0).isoformat()
+                    data["location"] = location_id
+                    await client.publish(
+                        topic=f"{settings.MQTT_SOURCE_TOPIC}/{location_id}",
+                        payload=orjson.dumps(data),
+                    )
+                    await asyncio.sleep(frequency)
 
         except Exception as error:
             traceback.print_exc()
 
 
-async def main():
-    logging.info("Getting source files")
-    locations = await list_source_files(limit=50)
+async def on_message(client, userdata, message):
+    logging.info(f"Received message: {message.payload.decode()} topic: {message.topic}")
+    locations = orjson.loads(message.payload.decode())
     if not locations:
         logging.warning("No source files found")
         return
@@ -99,11 +51,25 @@ async def main():
     for location in locations:
         task = publish_data(
             session=session,
-            client_id=str(uuid4()),
-            source_file_name=location.get("location_name"),
+            client=client,
+            source_file_name=location,
         )
         tasks.append(task)
     await asyncio.gather(*tasks)
+
+
+async def main():
+    client_id = str(uuid4())
+    async with aiomqtt.Client(
+        identifier=client_id,
+        hostname=settings.MQTT_BROKER_HOST,
+        port=settings.MQTT_BROKER_PORT,
+    ) as client:
+        await client.subscribe("$share/dg/source_files")
+        logging.info("waiting for messages")
+        async for message in client.messages:
+            await on_message(client, None, message)
+            break  # Only process the first message
 
 
 if __name__ == "__main__":

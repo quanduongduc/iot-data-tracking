@@ -4,6 +4,7 @@ from zoneinfo import ZoneInfo
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, ConfigDict, model_validator
+from ..database import Base
 
 
 def convert_datetime_to_gmt(dt: datetime) -> str:

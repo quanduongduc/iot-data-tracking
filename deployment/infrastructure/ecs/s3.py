@@ -14,7 +14,6 @@ dg_role_name = role_stack.get_output("ec2_data_generator_role_name")
 
 source_data_bucket = aws.s3.Bucket(
     f"{prefix}-source-data",
-    opts=pulumi.ResourceOptions(retain_on_delete=True),
 )
 
 s3_msk_plugin_access_policy = aws.s3.BucketPublicAccessBlock(
@@ -24,7 +23,6 @@ s3_msk_plugin_access_policy = aws.s3.BucketPublicAccessBlock(
     ignore_public_acls=False,
     block_public_policy=False,
     restrict_public_buckets=False,
-    opts=pulumi.ResourceOptions(retain_on_delete=True),
 )
 
 source_data_bucket_ownership_controls = aws.s3.BucketOwnershipControls(
@@ -33,7 +31,6 @@ source_data_bucket_ownership_controls = aws.s3.BucketOwnershipControls(
     rule=aws.s3.BucketOwnershipControlsRuleArgs(
         object_ownership="BucketOwnerPreferred"
     ),
-    opts=pulumi.ResourceOptions(retain_on_delete=True),
 )
 
 caller_identity = aws.get_caller_identity()
@@ -83,5 +80,4 @@ s3_bucket_policy_attachment = aws.s3.BucketPolicy(
     f"{prefix}-bucket-policy-attachment",
     bucket=source_data_bucket.id,
     policy=policy_output,
-    opts=pulumi.ResourceOptions(retain_on_delete=True),
 )

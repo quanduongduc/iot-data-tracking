@@ -16,6 +16,7 @@ from infrastructure.environment import project_name
 api_gate_way = aws.apigatewayv2.Api(
     f"{project_name}-api-gateway",
     protocol_type="HTTP",
+    cors_configuration={"allowOrigins": ["*"], "allowMethods": ["GET", "POST"]},
     route_selection_expression="$request.method $request.path",
 )
 

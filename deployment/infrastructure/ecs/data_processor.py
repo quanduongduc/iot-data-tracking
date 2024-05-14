@@ -38,8 +38,8 @@ data_processor_log_stream = aws.cloudwatch.LogStream(
 data_processor_task_definition = aws.ecs.TaskDefinition(
     f"{prefix}-dp-task",
     family=f"{prefix}-dp-task",
-    cpu="256",
-    memory="256",
+    cpu="1024",  # 1 vCPU
+    memory="1536",  # 1.5 GB of RAM
     network_mode="bridge",
     requires_compatibilities=["EC2"],
     execution_role_arn=task_execution_role_arn,
@@ -93,7 +93,7 @@ data_processor_instance_profile = aws.iam.InstanceProfile(
 data_processor_launch_config = aws.ec2.LaunchConfiguration(
     f"{prefix}-dp-launch-config",
     image_id=ecs_optimized_ami_id,
-    instance_type="t2.micro",
+    instance_type="t3.small",
     security_groups=[data_processor_sg_id],
     key_name="test",
     iam_instance_profile=data_processor_instance_profile.arn,
@@ -105,10 +105,10 @@ data_processor_launch_config = aws.ec2.LaunchConfiguration(
 data_processor_auto_scaling_group = aws.autoscaling.Group(
     f"{prefix}-dp-asg",
     launch_configuration=data_processor_launch_config.id,
-    desired_capacity=3,
+    desired_capacity=10,
     health_check_type="EC2",
-    min_size=3,
-    max_size=5,
+    min_size=8,
+    max_size=12,
     vpc_zone_identifiers=[ecs_private_subnet1_id, ecs_private_subnet2_id],
     target_group_arns=[data_processor_target_group.arn],
     opts=pulumi.ResourceOptions(

@@ -192,20 +192,6 @@ data_generator_sg = aws.ec2.SecurityGroup(
     ],
 )
 
-rds_sg = aws.ec2.SecurityGroup(
-    f"{prefix}-rds-sg",
-    vpc_id=vpc.id,
-    description="Allow access to RDS",
-    ingress=[
-        aws.ec2.SecurityGroupIngressArgs(
-            description="Allow port for mysql rds",
-            from_port=3306,
-            to_port=3306,
-            protocol=aws.ec2.ProtocolType.TCP,
-            security_groups=[api_sg.id, data_generator_sg.id],
-        )
-    ],
-)
 
 apigw_vpc_link_sg_egress = aws.ec2.SecurityGroupRule(
     f"{prefix}-apigw-vpc-link-sg-ingress",
@@ -321,6 +307,36 @@ msk_sg = aws.ec2.SecurityGroup(
     ],
 )
 
+cache_sg = aws.ec2.SecurityGroup(
+    f"{prefix}-cache-sg",
+    vpc_id=vpc.id,
+    description="Allow access to ElastiCache",
+    ingress=[
+        aws.ec2.SecurityGroupIngressArgs(
+            description="Allow port for redis",
+            from_port=6379,
+            to_port=6379,
+            protocol=aws.ec2.ProtocolType.TCP,
+            security_groups=[api_sg.id, data_generator_sg.id, data_processor_sg.id],
+        )
+    ],
+)
+
+rds_sg = aws.ec2.SecurityGroup(
+    f"{prefix}-rds-sg",
+    vpc_id=vpc.id,
+    description="Allow access to RDS",
+    ingress=[
+        aws.ec2.SecurityGroupIngressArgs(
+            description="Allow port for mysql rds",
+            from_port=3306,
+            to_port=3306,
+            protocol=aws.ec2.ProtocolType.TCP,
+            security_groups=[api_sg.id, data_generator_sg.id, data_processor_sg.id],
+        )
+    ],
+)
+
 pulumi.export("ecs_private_subnet1_id", ecs_private_subnet1.id)
 pulumi.export("ecs_private_subnet2_id", ecs_private_subnet2.id)
 pulumi.export("ecs_public_subnet_id", ecs_public_subnet.id)
@@ -334,3 +350,4 @@ pulumi.export("rds_sg_id", rds_sg.id)
 pulumi.export("msk_sg_id", msk_sg.id)
 pulumi.export("kafka_bridge_sg_id", kafka_bridge_sg.id)
 pulumi.export("data_processor_sg_id", data_processor_sg.id)
+pulumi.export("cache_sg_id", cache_sg.id)
