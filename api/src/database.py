@@ -2,6 +2,7 @@ from sqlalchemy import MetaData
 from src.config import settings
 import contextlib
 from typing import Any, AsyncIterator
+import aioboto3
 
 from sqlalchemy.ext.asyncio import (
     AsyncConnection,
@@ -20,6 +21,10 @@ NAMING_CONVENTION = {
 }
 metadata = MetaData(naming_convention=NAMING_CONVENTION)
 
+import logging
+from .config import settings
+from sqlalchemy.ext.asyncio import AsyncSession
+from botocore.exceptions import BotoCoreError, ClientError
 
 Base = declarative_base(metadata=metadata)
 
@@ -70,6 +75,20 @@ sessionmanager = DatabaseSessionManager(settings.MYSQL_DSN)
 async def get_db_session():
     async with sessionmanager.session() as session:
         yield session
+
+session = aioboto3.Session()
+
+async def get_dynamodb_table():
+    try:
+        dynamodb = session.resource("dynamodb")
+        table = dynamodb.Table(settings.DYNAMODB_TABLE)
+        return table
+    except BotoCoreError as e:
+        logging.error(f"BotoCoreError occurred: {e}")
+        raise
+    except ClientError as e:
+        logging.error(f"ClientError occurred: {e}")
+        raise
 
 
 from src.models import *

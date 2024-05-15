@@ -91,6 +91,8 @@ class AppSettings(BaseSettings):
     CORS_HEADERS: List[str]
     CORS_ORIGINS: List[str]
 
+    DYNAMODB_TABLE: str
+    
     MYSQL_USER: str
     MYSQL_PASSWORD: SecretStr
     MYSQL_HOST: str

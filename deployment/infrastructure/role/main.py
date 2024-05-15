@@ -162,6 +162,31 @@ secret_manager_policy = aws.iam.Policy(
     ),
 )
 
+dynamodb_policy = aws.iam.Policy(
+    f"{project_name}-dynamodb-policy",
+    policy=json.dumps(
+        {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "dynamodb:BatchGetItem",
+                        "dynamodb:BatchWriteItem",
+                        "dynamodb:DeleteItem",
+                        "dynamodb:GetItem",
+                        "dynamodb:PutItem",
+                        "dynamodb:Query",
+                        "dynamodb:Scan",
+                        "dynamodb:UpdateItem",
+                    ],
+                    "Resource": get_arn_template("dynamodb", f"table/{project_name}-*"),
+                }
+            ],
+        }
+    ),
+)
+
 ec2_api_role = aws.iam.Role(
     f"{project_name}-ec2-api-role",
     assume_role_policy=json.dumps(
@@ -182,6 +207,7 @@ ec2_api_role = aws.iam.Role(
         secret_manager_policy.arn,
         cloudwatch_policy.arn,
         ecs_registration_policy.arn,
+        dynamodb_policy.arn,
     ],
 )
 

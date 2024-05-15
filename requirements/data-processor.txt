@@ -2,7 +2,6 @@ pydantic==2.6.4
 aiokafka==0.10.0
 redis==5.0.4
 async-generator==1.10
-aiomysql==0.2.0
 orjson==3.9.15
 pydantic-settings==2.2.1
 aioboto3==12.4.0

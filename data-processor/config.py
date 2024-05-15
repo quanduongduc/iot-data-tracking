@@ -85,24 +85,7 @@ class AppSettings(BaseSettings):
     REDIS_PORT: int
     REDIS_DB: int
 
-    MYSQL_USER: str
-    MYSQL_PASSWORD: SecretStr
-    MYSQL_HOST: str
-    MYSQL_PORT: int
-    MYSQL_DB: str
-
-    @property
-    def MYSQL_dsn(self) -> MySQLDsn:
-        return str(
-            MySQLDsn.build(
-                scheme="mysql+aiomysql",
-                username=self.MYSQL_USER,
-                password=self.MYSQL_PASSWORD.get_secret_value(),
-                host=self.MYSQL_HOST,
-                port=self.MYSQL_PORT,
-                path=self.MYSQL_DB,
-            )
-        )
+    DYNAMODB_TABLE_NAME: str
 
     @property
     def is_production(self) -> bool:
