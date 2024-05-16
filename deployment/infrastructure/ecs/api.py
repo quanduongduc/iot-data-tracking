@@ -91,7 +91,7 @@ api_instance_profile = aws.iam.InstanceProfile(
 api_launch_config = aws.ec2.LaunchConfiguration(
     f"{prefix}-api-launch-config",
     image_id=ecs_optimized_ami_id,
-    instance_type="t4g.micro",
+    instance_type="t3.small",
     security_groups=[api_sg_id],
     key_name="test",
     iam_instance_profile=api_instance_profile.arn,

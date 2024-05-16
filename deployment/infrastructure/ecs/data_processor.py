@@ -38,8 +38,8 @@ data_processor_log_stream = aws.cloudwatch.LogStream(
 data_processor_task_definition = aws.ecs.TaskDefinition(
     f"{prefix}-dp-task",
     family=f"{prefix}-dp-task",
-    cpu="1024",  # 1 vCPU
-    memory="1536",  # 1.5 GB of RAM
+    cpu="2048",  # 2 vCPU
+    memory="768",  # 0.75 GB of RAM
     network_mode="bridge",
     requires_compatibilities=["EC2"],
     execution_role_arn=task_execution_role_arn,
@@ -93,7 +93,7 @@ data_processor_instance_profile = aws.iam.InstanceProfile(
 data_processor_launch_config = aws.ec2.LaunchConfiguration(
     f"{prefix}-dp-launch-config",
     image_id=ecs_optimized_ami_id,
-    instance_type="t4g.micro",
+    instance_type="t3.small",
     security_groups=[data_processor_sg_id],
     key_name="test",
     iam_instance_profile=data_processor_instance_profile.arn,

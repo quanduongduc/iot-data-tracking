@@ -68,36 +68,36 @@ async def get_location_data(
 ):
     try:
         start_date_result = await dynamodb_table.query(
-            KeyConditionExpression=Key('location_id').eq(payload.location_id),
+            KeyConditionExpression=Key("location").eq(payload.location),
             ScanIndexForward=False,
             Limit=1,
-            ExclusiveStartKey={'page': payload.page}
+            ExclusiveStartKey={"page": payload.page},
         )
-        start_date = start_date_result['Items'][0]['date']
+        start_date = start_date_result["Items"][0]["date"]
 
         result = await dynamodb_table.query(
-            KeyConditionExpression=Key('location_id').eq(payload.location_id) & Key('date').eq(start_date),
-            ScanIndexForward=False
+            KeyConditionExpression=Key("location_id").eq(payload.location)
+            & Key("Date").eq(start_date),
+            ScanIndexForward=False,
         )
-        weather_data = result['Items']
+        weather_data = result["Items"]
 
         weather_data_response = [
             LocationWeatherDataResponse(
-                id=weather['id'],
-                location_id=weather['location_id'],
-                temperature=weather['temperature'],
-                humidity=weather['humidity'],
-                wind_speed=weather['wind_speed'],
-                wind_direction=weather['wind_direction'],
-                rain_fall=weather['rain_fall'],
-                date=weather['date'],
-                latitude=weather['latitude'],
-                longitude=weather['longitude'],
-                cld=weather['cld'],
-                pet=weather['pet'],
-                tmn=weather['tmn'],
-                tmx=weather['tmx'],
-                wet=weather['wet'],
+                location_id=weather["location"],
+                temperature=weather["temperature"],
+                humidity=weather["humidity"],
+                wind_speed=weather["wind_speed"],
+                wind_direction=weather["wind_direction"],
+                rain_fall=weather["rain_fall"],
+                date=weather["date"],
+                latitude=weather["latitude"],
+                longitude=weather["longitude"],
+                cld=weather["cld"],
+                pet=weather["pet"],
+                tmn=weather["tmn"],
+                tmx=weather["tmx"],
+                wet=weather["wet"],
             )
             for weather in weather_data
         ]

@@ -38,8 +38,8 @@ data_generator_log_stream = aws.cloudwatch.LogStream(
 data_generator_task_definition = aws.ecs.TaskDefinition(
     f"{prefix}-dg-task",
     family=f"{prefix}-dg-task",
-    cpu="1024",
-    memory="1536",
+    cpu="2048",
+    memory="768",
     network_mode="bridge",
     requires_compatibilities=["EC2"],
     execution_role_arn=task_execution_role_arn,
@@ -93,7 +93,7 @@ data_generator_instance_profile = aws.iam.InstanceProfile(
 data_generator_launch_config = aws.ec2.LaunchConfiguration(
     f"{prefix}-dg-launch-config",
     image_id=ecs_optimized_ami_id,
-    instance_type="t4g.micro",
+    instance_type="t3.small",
     security_groups=[data_generator_sg_id],
     key_name="test",
     iam_instance_profile=data_generator_instance_profile.arn,
@@ -108,7 +108,7 @@ data_generator_auto_scaling_group = aws.autoscaling.Group(
     desired_capacity=10,
     health_check_type="EC2",
     min_size=8,
-    max_size=12,
+    max_size=15,
     vpc_zone_identifiers=[ecs_private_subnet1_id, ecs_private_subnet2_id],
     target_group_arns=[data_generator_target_group.arn],
     opts=pulumi.ResourceOptions(
@@ -123,7 +123,7 @@ data_generator_capacity_provider = aws.ecs.CapacityProvider(
         auto_scaling_group_arn=data_generator_auto_scaling_group.arn,
         managed_scaling=aws.ecs.CapacityProviderAutoScalingGroupProviderManagedScalingArgs(
             status="ENABLED",
-            target_capacity=5,
+            target_capacity=10,
         ),
         managed_termination_protection="DISABLED",
     ),
@@ -134,7 +134,7 @@ data_generator_service = aws.ecs.Service(
     f"{prefix}-dg-service",
     cluster=cluster.arn,
     task_definition=data_generator_task_definition.arn,
-    desired_count=5,
+    desired_count=10,
     capacity_provider_strategies=[
         aws.ecs.ServiceCapacityProviderStrategyArgs(
             capacity_provider=data_generator_capacity_provider.name,

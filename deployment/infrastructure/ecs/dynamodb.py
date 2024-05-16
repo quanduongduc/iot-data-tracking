@@ -9,11 +9,9 @@ dynamodb_table = aws.dynamodb.Table(
     attributes=[
         aws.dynamodb.TableAttributeArgs(name="location", type="S"),
         aws.dynamodb.TableAttributeArgs(name="Date", type="S"),
-        aws.dynamodb.TableAttributeArgs(name="Latitude", type="N"),
-        aws.dynamodb.TableAttributeArgs(name="Longitude", type="N"),
     ],
     hash_key="location",
     range_key="Date",
-    read_capacity=20,
-    write_capacity=20,
+    read_capacity=100,
+    write_capacity=500,
 )

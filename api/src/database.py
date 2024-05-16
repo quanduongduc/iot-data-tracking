@@ -76,12 +76,14 @@ async def get_db_session():
     async with sessionmanager.session() as session:
         yield session
 
+
 session = aioboto3.Session()
+
 
 async def get_dynamodb_table():
     try:
         dynamodb = session.resource("dynamodb")
-        table = dynamodb.Table(settings.DYNAMODB_TABLE)
+        table = dynamodb.Table(settings.DYNAMODB_TABLE_NAME)
         return table
     except BotoCoreError as e:
         logging.error(f"BotoCoreError occurred: {e}")

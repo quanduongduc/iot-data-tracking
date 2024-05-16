@@ -11,7 +11,6 @@ from config import settings
 
 
 async def publish_data(
-    client: aiomqtt.Client,
     session: aioboto3.Session,
     source_file_name: str,
 ):
@@ -24,23 +23,47 @@ async def publish_data(
             frequency = 1  # 1 second
             location_id = source_file_name
             logging.info(f"Publishing data for location: {location_id}")
-            while True:
-                for data in source_data:
-                    data["Date"] = datetime.now(UTC).replace(microsecond=0).isoformat()
-                    data["location"] = location_id
-                    await client.publish(
-                        topic=f"{settings.MQTT_SOURCE_TOPIC}/{location_id}",
-                        payload=orjson.dumps(data),
-                    )
-                    await asyncio.sleep(frequency)
+            async with aiomqtt.Client(
+                identifier=str(uuid4()),
+                hostname=settings.MQTT_BROKER_HOST,
+                port=settings.MQTT_BROKER_PORT,
+            ) as client:
+                while True:
+                    for data in source_data:
+                        data["Date"] = (
+                            datetime.now(UTC).replace(microsecond=0).isoformat()
+                        )
+                        data["location"] = location_id
+                        await client.publish(
+                            topic=f"{settings.MQTT_SOURCE_TOPIC}/{location_id}",
+                            payload=orjson.dumps(data),
+                        )
+                        await asyncio.sleep(frequency)
 
         except Exception as error:
             traceback.print_exc()
 
 
-async def on_message(client, userdata, message):
-    logging.info(f"Received message: {message.payload.decode()} topic: {message.topic}")
-    locations = orjson.loads(message.payload.decode())
+async def on_message(client: aiomqtt.Client, userdata, message):
+    return message.payload.decode()
+
+
+async def main():
+    client_id = str(uuid4())
+    source_files = []
+    async with aiomqtt.Client(
+        identifier=client_id,
+        hostname=settings.MQTT_BROKER_HOST,
+        port=settings.MQTT_BROKER_PORT,
+    ) as client:
+        await client.subscribe("$share/dg/source_files")
+        logging.info("waiting for messages")
+        async for message in client.messages:
+            source_files = await on_message(client, None, message)
+            break  # Only process the first message
+
+    logging.info(f"Received source files: {source_files}")
+    locations = orjson.loads(source_files)
     if not locations:
         logging.warning("No source files found")
         return
@@ -51,25 +74,10 @@ async def on_message(client, userdata, message):
     for location in locations:
         task = publish_data(
             session=session,
-            client=client,
             source_file_name=location,
         )
         tasks.append(task)
     await asyncio.gather(*tasks)
-
-
-async def main():
-    client_id = str(uuid4())
-    async with aiomqtt.Client(
-        identifier=client_id,
-        hostname=settings.MQTT_BROKER_HOST,
-        port=settings.MQTT_BROKER_PORT,
-    ) as client:
-        await client.subscribe("$share/dg/source_files")
-        logging.info("waiting for messages")
-        async for message in client.messages:
-            await on_message(client, None, message)
-            break  # Only process the first message
 
 
 if __name__ == "__main__":

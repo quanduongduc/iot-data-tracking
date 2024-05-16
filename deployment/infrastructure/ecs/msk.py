@@ -15,6 +15,7 @@ msk_configuration = aws.msk.Configuration(
     server_properties="""
     auto.create.topics.enable = true
     delete.topic.enable = true
+    num.partitions = 5
     """,
 )
 
@@ -33,7 +34,7 @@ msk_cluster = aws.msk.Cluster(
         unauthenticated=True,
     ),
     broker_node_group_info=aws.msk.ClusterBrokerNodeGroupInfoArgs(
-        instance_type="kafka.m5.large",
+        instance_type="kafka.t3.small",
         client_subnets=[ecs_private_subnet1_id, ecs_private_subnet2_id],
         security_groups=[msk_sg_id],
         storage_info=aws.msk.ClusterBrokerNodeGroupInfoStorageInfoArgs(

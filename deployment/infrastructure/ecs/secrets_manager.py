@@ -41,8 +41,8 @@ from infrastructure.ecs.mosquitto import (
     mosquitto_nlb_mqtt_listener,
 )
 from infrastructure.ecs.s3 import source_data_bucket
-from deployment.infrastructure.ecs.dynamodb import dynamodb_table
-from deployment.infrastructure.ecs.rds import rds_instance
+from infrastructure.ecs.dynamodb import dynamodb_table
+from infrastructure.ecs.rds import rds_instance
 from infrastructure.ecs.msk import (
     KAFKA_WEATHER_DATA_GROUP_ID,
     KAFKA_WEATHER_DATA_TOPIC,
@@ -98,7 +98,7 @@ secret_version = aws.secretsmanager.SecretVersion(
                 "KAFKA_BOOTSTRAP_SERVERS": args[8],
                 "REDIS_HOST": args[9],
                 "REDIS_PORT": args[10],
-                "DYNAMODB_TABLE": args[11],
+                "DYNAMODB_TABLE_NAME": args[11],
             }
         ),
     ),

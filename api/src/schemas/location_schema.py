@@ -9,12 +9,11 @@ class LocationResponse(RootSchema):
 
 
 class LocationWeatherDataPayload(RootSchema):
-    location_id: int
+    location: str
     page: int = 0
 
 
 class LocationWeatherDataResponse(RootSchema):
-    id: int
     location_id: int
     temperature: float
     humidity: float
