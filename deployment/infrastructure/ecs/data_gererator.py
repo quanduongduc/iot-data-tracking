@@ -93,7 +93,7 @@ data_generator_instance_profile = aws.iam.InstanceProfile(
 data_generator_launch_config = aws.ec2.LaunchConfiguration(
     f"{prefix}-dg-launch-config",
     image_id=ecs_optimized_ami_id,
-    instance_type="t3.small",
+    instance_type="t4g.micro",
     security_groups=[data_generator_sg_id],
     key_name="test",
     iam_instance_profile=data_generator_instance_profile.arn,

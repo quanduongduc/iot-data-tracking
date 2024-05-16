@@ -93,7 +93,7 @@ kafka_bridge_instance_profile = aws.iam.InstanceProfile(
 kafka_bridge_launch_config = aws.ec2.LaunchConfiguration(
     f"{prefix}-kmb-launch-config",
     image_id=ecs_optimized_ami_id,
-    instance_type="t3.small",
+    instance_type="t4g.micro",
     security_groups=[kafka_bridge_sg_id],
     key_name="test",
     iam_instance_profile=kafka_bridge_instance_profile.arn,

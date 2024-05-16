@@ -93,7 +93,7 @@ data_processor_instance_profile = aws.iam.InstanceProfile(
 data_processor_launch_config = aws.ec2.LaunchConfiguration(
     f"{prefix}-dp-launch-config",
     image_id=ecs_optimized_ami_id,
-    instance_type="t3.small",
+    instance_type="t4g.micro",
     security_groups=[data_processor_sg_id],
     key_name="test",
     iam_instance_profile=data_processor_instance_profile.arn,
