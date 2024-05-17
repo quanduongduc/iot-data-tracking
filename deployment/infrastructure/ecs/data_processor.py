@@ -105,10 +105,10 @@ data_processor_launch_config = aws.ec2.LaunchConfiguration(
 data_processor_auto_scaling_group = aws.autoscaling.Group(
     f"{prefix}-dp-asg",
     launch_configuration=data_processor_launch_config.id,
-    desired_capacity=10,
+    desired_capacity=5,
     health_check_type="EC2",
-    min_size=8,
-    max_size=12,
+    min_size=4,
+    max_size=6,
     vpc_zone_identifiers=[ecs_private_subnet1_id, ecs_private_subnet2_id],
     target_group_arns=[data_processor_target_group.arn],
     opts=pulumi.ResourceOptions(

@@ -76,7 +76,7 @@ async def get_location_data(
         start_date = start_date_result["Items"][0]["date"]
 
         result = await dynamodb_table.query(
-            KeyConditionExpression=Key("location_id").eq(payload.location)
+            KeyConditionExpression=Key("location").eq(payload.location)
             & Key("Date").eq(start_date),
             ScanIndexForward=False,
         )

@@ -105,10 +105,10 @@ data_generator_launch_config = aws.ec2.LaunchConfiguration(
 data_generator_auto_scaling_group = aws.autoscaling.Group(
     f"{prefix}-dg-asg",
     launch_configuration=data_generator_launch_config.id,
-    desired_capacity=10,
+    desired_capacity=5,
     health_check_type="EC2",
-    min_size=8,
-    max_size=15,
+    min_size=4,
+    max_size=5,
     vpc_zone_identifiers=[ecs_private_subnet1_id, ecs_private_subnet2_id],
     target_group_arns=[data_generator_target_group.arn],
     opts=pulumi.ResourceOptions(
@@ -123,7 +123,7 @@ data_generator_capacity_provider = aws.ecs.CapacityProvider(
         auto_scaling_group_arn=data_generator_auto_scaling_group.arn,
         managed_scaling=aws.ecs.CapacityProviderAutoScalingGroupProviderManagedScalingArgs(
             status="ENABLED",
-            target_capacity=10,
+            target_capacity=5,
         ),
         managed_termination_protection="DISABLED",
     ),
@@ -134,7 +134,7 @@ data_generator_service = aws.ecs.Service(
     f"{prefix}-dg-service",
     cluster=cluster.arn,
     task_definition=data_generator_task_definition.arn,
-    desired_count=10,
+    desired_count=5,
     capacity_provider_strategies=[
         aws.ecs.ServiceCapacityProviderStrategyArgs(
             capacity_provider=data_generator_capacity_provider.name,

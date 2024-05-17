@@ -18,9 +18,7 @@ log_group = aws.cloudwatch.LogGroup(
     retention_in_days=7,
 )
 
-ecs_optimized_ami_name = (
-    "/aws/service/ecs/optimized-ami/amazon-linux-2023/arm64/recommended"
-)
+ecs_optimized_ami_name = "/aws/service/ecs/optimized-ami/amazon-linux-2023/recommended"
 
 ecs_optimized_ami_id = json.loads(
     aws.ssm.get_parameter(name=ecs_optimized_ami_name).value
