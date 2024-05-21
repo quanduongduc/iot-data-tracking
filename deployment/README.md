@@ -19,4 +19,4 @@ cmd pulumi up
 
 **Topology**
 
-![ecs-fastapi - Page 1](https://github.com/quanduongduc/fastapi-ecs/assets/59951771/868fb25f-5cc1-4252-9784-3e7c149ed398)
+![image](https://github.com/quanduongduc/iot-data-tracking/assets/59951771/73440cc0-1029-4c86-ac4a-b89a978f9860)
