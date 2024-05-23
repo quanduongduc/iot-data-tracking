@@ -15,13 +15,13 @@ msk_configuration = aws.msk.Configuration(
     server_properties="""
     auto.create.topics.enable = true
     delete.topic.enable = true
-    num.partitions = 5
+    num.partitions = 12
     """,
 )
 
 
 msk_cluster = aws.msk.Cluster(
-    f"{prefix}-msk-cluster",
+    f"{prefix}-msk-cluster1",
     cluster_name=f"{prefix}-msk-cluster",
     kafka_version="2.6.1",
     number_of_broker_nodes=2,

@@ -7,7 +7,9 @@ from sqlalchemy import select
 from .constanst import SHOW_DOCS_ENVIRONMENT
 from .config import settings
 from sqlalchemy.ext.asyncio import AsyncSession
-from .database import get_db_session, get_dynamodb_table
+from .database import get_db_session
+import aioboto3
+
 from .models import SourceLocation
 from .schemas.location_schema import (
     LocationResponse,
@@ -64,44 +66,37 @@ async def get_locations(db_session: AsyncSession = Depends(get_db_session)):
 @router.get("/weather_data", response_model=List[LocationWeatherDataResponse])
 async def get_location_data(
     payload: LocationWeatherDataPayload = Depends(),
-    dynamodb_table=Depends(get_dynamodb_table),
 ):
     try:
-        start_date_result = await dynamodb_table.query(
-            KeyConditionExpression=Key("location").eq(payload.location),
-            ScanIndexForward=False,
-            Limit=1,
-            ExclusiveStartKey={"page": payload.page},
-        )
-        start_date = start_date_result["Items"][0]["date"]
-
-        result = await dynamodb_table.query(
-            KeyConditionExpression=Key("location").eq(payload.location)
-            & Key("Date").eq(start_date),
-            ScanIndexForward=False,
-        )
-        weather_data = result["Items"]
-
-        weather_data_response = [
-            LocationWeatherDataResponse(
-                location_id=weather["location"],
-                temperature=weather["temperature"],
-                humidity=weather["humidity"],
-                wind_speed=weather["wind_speed"],
-                wind_direction=weather["wind_direction"],
-                rain_fall=weather["rain_fall"],
-                date=weather["date"],
-                latitude=weather["latitude"],
-                longitude=weather["longitude"],
-                cld=weather["cld"],
-                pet=weather["pet"],
-                tmn=weather["tmn"],
-                tmx=weather["tmx"],
-                wet=weather["wet"],
+        session = aioboto3.Session()
+        async with session.resource("dynamodb") as dynamodb:
+            dynamodb_table = await dynamodb.Table(settings.DYNAMODB_TABLE_NAME)
+            result = await dynamodb_table.query(
+                KeyConditionExpression=Key("location").eq(payload.location),
+                ScanIndexForward=False,
             )
-            for weather in weather_data
-        ]
-        return weather_data_response
+            weather_data = result["Items"]
+
+            weather_data_response = [
+                LocationWeatherDataResponse(
+                    location_id=weather["location"],
+                    temperature=weather["tmp"],
+                    humidity=weather["humidity"],
+                    wind_speed=weather["wind_speed"],
+                    wind_direction=weather["wind_direction"],
+                    rain_fall=weather["rain_fall"],
+                    date=weather["Date"],
+                    latitude=weather["Latitude"],
+                    longitude=weather["Longitude"],
+                    cld=weather["cld"],
+                    pet=weather["pet"],
+                    tmn=weather["tmn"],
+                    tmx=weather["tmx"],
+                    wet=weather["wet"],
+                )
+                for weather in weather_data
+            ]
+            return weather_data_response
     except BotoCoreError as e:
         logging.error(f"BotoCoreError occurred: {e}")
         raise

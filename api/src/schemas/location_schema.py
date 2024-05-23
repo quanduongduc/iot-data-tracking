@@ -10,7 +10,6 @@ class LocationResponse(RootSchema):
 
 class LocationWeatherDataPayload(RootSchema):
     location: str
-    page: int = 0
 
 
 class LocationWeatherDataResponse(RootSchema):

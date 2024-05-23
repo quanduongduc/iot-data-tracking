@@ -38,7 +38,7 @@ data_generator_log_stream = aws.cloudwatch.LogStream(
 data_generator_task_definition = aws.ecs.TaskDefinition(
     f"{prefix}-dg-task",
     family=f"{prefix}-dg-task",
-    cpu="2048",
+    cpu="1024",
     memory="768",
     network_mode="bridge",
     requires_compatibilities=["EC2"],
@@ -134,7 +134,7 @@ data_generator_service = aws.ecs.Service(
     f"{prefix}-dg-service",
     cluster=cluster.arn,
     task_definition=data_generator_task_definition.arn,
-    desired_count=5,
+    desired_count=10,
     capacity_provider_strategies=[
         aws.ecs.ServiceCapacityProviderStrategyArgs(
             capacity_provider=data_generator_capacity_provider.name,

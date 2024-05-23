@@ -38,7 +38,7 @@ kafka_bridge_log_stream = aws.cloudwatch.LogStream(
 kafka_bridge_task_definition = aws.ecs.TaskDefinition(
     f"{prefix}-kmb-task",
     family=f"{prefix}-kmb-task",
-    cpu="2048",  # 1 vCPU
+    cpu="2048",
     memory="768",  # 0.75 GB of RAM
     network_mode="bridge",
     requires_compatibilities=["EC2"],
@@ -105,10 +105,10 @@ kafka_bridge_launch_config = aws.ec2.LaunchConfiguration(
 kafka_bridge_auto_scaling_group = aws.autoscaling.Group(
     f"{prefix}-kmb-asg",
     launch_configuration=kafka_bridge_launch_config.id,
-    desired_capacity=5,
+    desired_capacity=10,
     health_check_type="EC2",
-    min_size=3,
-    max_size=6,
+    min_size=8,
+    max_size=12,
     vpc_zone_identifiers=[ecs_private_subnet1_id, ecs_private_subnet2_id],
     target_group_arns=[kafka_bridge_target_group.arn],
     opts=pulumi.ResourceOptions(
@@ -134,7 +134,7 @@ kafka_bridge_service = aws.ecs.Service(
     f"{prefix}-kmb-service",
     cluster=cluster.arn,
     task_definition=kafka_bridge_task_definition.arn,
-    desired_count=5,
+    desired_count=10,
     capacity_provider_strategies=[
         aws.ecs.ServiceCapacityProviderStrategyArgs(
             capacity_provider=kafka_bridge_capacity_provider.name,

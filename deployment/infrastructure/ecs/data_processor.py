@@ -38,7 +38,7 @@ data_processor_log_stream = aws.cloudwatch.LogStream(
 data_processor_task_definition = aws.ecs.TaskDefinition(
     f"{prefix}-dp-task",
     family=f"{prefix}-dp-task",
-    cpu="2048",  # 2 vCPU
+    cpu="1024",
     memory="768",  # 0.75 GB of RAM
     network_mode="bridge",
     requires_compatibilities=["EC2"],
@@ -134,7 +134,7 @@ data_processor_service = aws.ecs.Service(
     f"{prefix}-dp-service",
     cluster=cluster.arn,
     task_definition=data_processor_task_definition.arn,
-    desired_count=5,
+    desired_count=10,
     capacity_provider_strategies=[
         aws.ecs.ServiceCapacityProviderStrategyArgs(
             capacity_provider=data_processor_capacity_provider.name,

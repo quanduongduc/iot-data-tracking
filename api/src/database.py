@@ -77,29 +77,4 @@ async def get_db_session():
         yield session
 
 
-class DynamoDBTableSingleton:
-    _instance = None
-
-    @staticmethod
-    async def get_instance():
-        if DynamoDBTableSingleton._instance is None:
-            try:
-                session = aioboto3.Session()
-                client = session.client("dynamodb")
-                DynamoDBTableSingleton._instance = await client.Table(
-                    settings.DYNAMODB_TABLE_NAME
-                )
-            except BotoCoreError as e:
-                logging.error(f"BotoCoreError occurred: {e}")
-                raise
-            except ClientError as e:
-                logging.error(f"ClientError occurred: {e}")
-                raise
-        return DynamoDBTableSingleton._instance
-
-
-async def get_dynamodb_table():
-    return await DynamoDBTableSingleton.get_instance()
-
-
 from src.models import *
