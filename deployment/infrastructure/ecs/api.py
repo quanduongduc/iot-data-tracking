@@ -38,7 +38,7 @@ apigw_endpoint = network_stack.get_output("apigw_endpoint")
 api_image = awsx.ecr.Image(
     f"{prefix}-fastapi-image",
     dockerfile=f"{root_dir_relative}/api/Dockerfile.{stack_name}",
-    context=f"{root_dir_relative}",
+    context=f"{root_dir_relative}/api/",
     repository_url=repo.repository_url,
     platform="linux/amd64",
 )

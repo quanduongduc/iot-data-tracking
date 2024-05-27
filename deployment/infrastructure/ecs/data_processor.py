@@ -25,7 +25,7 @@ data_processor_sg_id = network_stack.get_output("data_processor_sg_id")
 data_processor_image = awsx.ecr.Image(
     f"{prefix}-dp-image",
     dockerfile=f"{root_dir_relative}/data-processor/Dockerfile",
-    context=f"{root_dir_relative}",
+    context=f"{root_dir_relative}/data-processor",
     repository_url=repo.repository_url,
     platform="linux/amd64",
 )

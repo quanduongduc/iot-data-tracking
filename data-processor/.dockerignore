@@ -1,0 +1,9 @@
+deployment/infrastructure
+.vscode/
+__pycache__/
+venv/
+.DS_Store
+*.env
+*.log
+test/
+```

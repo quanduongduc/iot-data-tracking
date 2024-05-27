@@ -25,7 +25,7 @@ data_generator_sg_id = network_stack.get_output("data_generator_sg_id")
 data_generator_image = awsx.ecr.Image(
     f"{prefix}-dg-image",
     dockerfile=f"{root_dir_relative}/data-generator/Dockerfile",
-    context=f"{root_dir_relative}",
+    context=f"{root_dir_relative}/data-generator",
     repository_url=repo.repository_url,
     platform="linux/amd64",
 )

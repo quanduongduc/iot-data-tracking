@@ -14,7 +14,6 @@ from infrastructure.ecs.shared_ecs import (
     role_stack,
 )
 
-
 ecs_private_subnet1_id = network_stack.get_output("ecs_private_subnet1_id")
 ecs_private_subnet2_id = network_stack.get_output("ecs_private_subnet2_id")
 vpc_id = network_stack.get_output("vpc_id")
@@ -25,7 +24,7 @@ kafka_bridge_sg_id = network_stack.get_output("kafka_bridge_sg_id")
 kafka_bridge_image = awsx.ecr.Image(
     f"{prefix}-kmb-image",
     dockerfile=f"{root_dir_relative}/kafka-mqtt-bridge/Dockerfile",
-    context=f"{root_dir_relative}",
+    context=f"{root_dir_relative}/kafka-mqtt-bridge",
     repository_url=repo.repository_url,
     platform="linux/amd64",
 )
