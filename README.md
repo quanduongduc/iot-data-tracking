@@ -1,0 +1,86 @@
+<a name="readme-top"></a>
+
+<!-- PROJECT SHIELDS -->
+<!--
+*** I'm using markdown "reference style" links for readability.
+*** Reference links are enclosed in brackets [ ] instead of parentheses ( ).
+*** See the bottom of this document for the declaration of the reference variables
+*** for contributors-url, forks-url, etc. This is an optional, concise syntax you may use.
+*** https://www.markdownguide.org/basic-syntax/#reference-style-links
+-->
+[![Contributors][contributors-shield]][contributors-url]
+[![Forks][forks-shield]][forks-url]
+[![Stargazers][stars-shield]][stars-url]
+[![Issues][issues-shield]][issues-url]
+[![LinkedIn][linkedin-shield]][linkedin-url]
+
+
+<!-- PROJECT LOGO AND TITLE -->
+<p align="center">
+  <a href="https://github.com/quanduongduc/iot-data-tracking">
+    <img src="images/logo.png" alt="Logo" width="100" height="100">
+  </a>
+
+  <h2 align="center">Rtdt</h2>
+  <p align="center">
+    Real-time Data tracking
+    <br />
+    <a href="https://github.com/quanduongduc/iot-data-tracking"><strong>Check the Documentation »</strong></a>
+    <br />
+    <a href="https://github.com/quanduongduc/iot-data-tracking">View a Live Demo</a>
+    •
+    <a href="https://github.com/quanduongduc/iot-data-tracking/issues/new?template=bug_report.md">Report a Bug</a>
+    •
+    <a href="https://github.com/quanduongduc/iot-data-tracking/issues/new?template=feature_request.md">Request a Feature</a>
+  </p>
+</p>
+
+<!-- TABLE OF CONTENTS -->
+<details open="open">
+  <summary>Table of Contents</summary>
+  <ol>
+    <li><a href="#about">About This Project</a></li>
+    <li><a href="#start">Getting Started</a></li>
+    <li><a href="#use">Usage Guidelines</a></li>
+    <li><a href="#todos-section">TODOS</a></li>
+    <li><a href="#contrib-section">Contribution Guidelines</a></li>
+    <li><a href="#contact-section">Contact Details</a></li>
+  </ol>
+</details>
+
+<!-- ABOUT THE PROJECT -->
+## <a name="about"></a>About This Project
+
+[🔝 Back to Top](#readme-top-anchor)
+
+<!-- GETTING STARTED -->
+## <a name="start"></a>Getting Started
+
+To get the project up and running on your local system, follow these steps:
+
+### Setting up:
+
+* Install the required tools:
+
+
+<!-- TODOS -->
+## <a name="todos-section"></a>To-Do List
+- [ ] Change to Fargate
+- [ ] Use SPOT instances with robust unavailability management for saving cost
+- [ ] Replace the NAT with VPC endpoints
+- [ ] Adopt Spark for data processor (Experiment only)
+- [ ] Try Kafka source and sink connectors (Experiment only)
+
+
+<!-- MARKDOWN LINKS & IMAGES -->
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[contributors-shield]: https://img.shields.io/github/contributors/othneildrew/Best-README-Template.svg?style=for-the-badge
+[contributors-url]: https://github.com/quanduongduc/iot-data-tracking/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/othneildrew/Best-README-Template.svg?style=for-the-badge
+[forks-url]: https://github.com/quanduongduc/iot-data-tracking/network/members
+[stars-shield]: https://img.shields.io/github/stars/othneildrew/Best-README-Template.svg?style=for-the-badge
+[stars-url]: https://github.com/quanduongduc/iot-data-tracking/stargazers
+[issues-shield]: https://img.shields.io/github/issues/othneildrew/Best-README-Template.svg?style=for-the-badge
+[issues-url]: https://github.com/quanduongduc/iot-data-tracking/issues
+[linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
+[linkedin-url]: https://linkedin.com
