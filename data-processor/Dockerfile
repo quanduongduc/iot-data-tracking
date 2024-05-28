@@ -15,7 +15,7 @@ COPY requirements/ /tmp/requirements
 RUN pip install -U pip && \
     pip install --no-cache-dir -r /tmp/requirements/data-processor.txt
 
-COPY data-processor /src
+COPY . /src
 ENV PATH "$PATH:/src/scripts"
 
 RUN useradd -m -d /src -s /bin/bash app \

@@ -14,7 +14,7 @@ COPY requirements/kafka-mqtt-bridge.txt /tmp/requirements/
 RUN pip install -U pip && \
     pip install --no-cache-dir -r /tmp/requirements/kafka-mqtt-bridge.txt
 
-COPY kafka-mqtt-bridge /src
+COPY . /src
 
 ENV PATH "$PATH:/src"
 

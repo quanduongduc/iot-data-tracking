@@ -14,7 +14,7 @@ COPY requirements/data-generator.txt /tmp/requirements/
 RUN pip install -U pip && \
     pip install --no-cache-dir -r /tmp/requirements/data-generator.txt
 
-COPY data-generator /src
+COPY . /src
 
 ENV PATH "$PATH:/src"
 
