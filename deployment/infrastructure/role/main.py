@@ -187,15 +187,15 @@ dynamodb_policy = aws.iam.Policy(
     ),
 )
 
-ec2_api_role = aws.iam.Role(
-    f"{project_name}-ec2-api-role",
+api_task_role = aws.iam.Role(
+    f"{project_name}-api-task-role",
     assume_role_policy=json.dumps(
         {
             "Version": "2012-10-17",
             "Statement": [
                 {
                     "Action": "sts:AssumeRole",
-                    "Principal": {"Service": "ec2.amazonaws.com"},
+                    "Principal": {"Service": "ecs-tasks.amazonaws.com"},
                     "Effect": "Allow",
                     "Sid": "",
                 }
@@ -219,7 +219,7 @@ data_generator_role = aws.iam.Role(
             "Statement": [
                 {
                     "Action": "sts:AssumeRole",
-                    "Principal": {"Service": "ec2.amazonaws.com"},
+                    "Principal": {"Service": "ecs-tasks.amazonaws.com"},
                     "Effect": "Allow",
                     "Sid": "",
                 }
@@ -303,7 +303,7 @@ msk_connector_service_role = aws.iam.Role(
 
 
 pulumi.export("task_execution_role_arn", task_execution_role.arn)
-pulumi.export("ec2_api_role_name", ec2_api_role.name)
-pulumi.export("ec2_data_generator_role_name", data_generator_role.name)
-pulumi.export("ec2_data_processor_role_name", ec2_api_role.name)
-pulumi.export("ec2_kafka_bridge_role_name", ec2_api_role.name)
+pulumi.export("api_task_role_arn", api_task_role.arn)
+pulumi.export("data_generator_task_role_arn", data_generator_role.arn)
+pulumi.export("data_processor_task_role_arn", api_task_role.arn)
+pulumi.export("kafka_bridge_task_role_arn", api_task_role.arn)

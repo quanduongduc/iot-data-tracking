@@ -103,5 +103,3 @@ secret_version = aws.secretsmanager.SecretVersion(
         ),
     ),
 )
-
-pulumi.export("secret_name", secret.name)

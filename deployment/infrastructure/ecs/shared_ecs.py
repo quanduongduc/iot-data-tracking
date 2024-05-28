@@ -1,6 +1,7 @@
 import json
 import pulumi
 import pulumi_aws as aws
+import pulumi_awsx as awsx
 from infrastructure.environment import prefix, ref_prefix
 
 network_stack = pulumi.StackReference(f"{ref_prefix}/network")
@@ -18,8 +19,37 @@ log_group = aws.cloudwatch.LogGroup(
     retention_in_days=7,
 )
 
-ecs_optimized_ami_name = "/aws/service/ecs/optimized-ami/amazon-linux-2023/recommended"
 
-ecs_optimized_ami_id = json.loads(
-    aws.ssm.get_parameter(name=ecs_optimized_ami_name).value
-)["image_id"]
+def generate_fargate_services(prefix: str, need_spot=True, *args, **kwargs) -> tuple[aws.ecs.Service, aws.ecs.Service]:
+    desired_count = kwargs.pop("desired_count", None)
+    if desired_count is None:
+        raise ValueError("desired_count must be provided")
+
+    on_demand_service = aws.ecs.Service(
+        f"{prefix}-service",
+        capacity_provider_strategies=[
+            aws.ecs.ServiceCapacityProviderStrategyArgs(
+                capacity_provider="FARGATE",
+                weight=1,
+            )
+        ],
+        desired_count=0 if need_spot else desired_count,
+        **kwargs,
+    )
+
+    if need_spot:
+        spot_service = aws.ecs.Service(
+            f"{prefix}-spot-service",
+            capacity_provider_strategies=[
+                aws.ecs.ServiceCapacityProviderStrategyArgs(
+                    capacity_provider="FARGATE_SPOT",
+                    weight=1,
+                )
+            ],
+            desired_count=desired_count,
+            **kwargs,
+        )
+
+        return on_demand_service, spot_service
+
+    return on_demand_service, None

@@ -1,7 +1,5 @@
 import json
-import os
 
-import pulumi_synced_folder
 from infrastructure.environment import prefix
 import pulumi
 import pulumi_aws as aws
@@ -9,8 +7,8 @@ from infrastructure.ecs.shared_ecs import role_stack
 
 config = pulumi.Config()
 source_data_path = config.require_object("source_data_path").get("value")
-ec2_role_name = role_stack.get_output("ec2_api_role_name")
-dg_role_name = role_stack.get_output("ec2_data_generator_role_name")
+api_task_role_arn = role_stack.get_output("api_task_role_arn")
+dg_task_role_arn = role_stack.get_output("data_generator_task_role_arn")
 
 source_data_bucket = aws.s3.Bucket(
     f"{prefix}-source-data",
@@ -40,7 +38,7 @@ caller_identity = aws.get_caller_identity()
 
 
 def create_policy(args):
-    caller_arn, bucket_id, account_id, ec2_role_name, dg_role_name = args
+    caller_arn, bucket_id, api_task_role_arn, dg_task_role_arn = args
     policy = {
         "Version": "2012-10-17",
         "Statement": [
@@ -50,8 +48,8 @@ def create_policy(args):
                 "Principal": {
                     "AWS": [
                         caller_arn,
-                        f"arn:aws:iam::{account_id}:role/{ec2_role_name}",
-                        f"arn:aws:iam::{account_id}:role/{dg_role_name}",
+                        api_task_role_arn,
+                        dg_task_role_arn,
                     ]
                 },
                 "Action": [
@@ -74,9 +72,8 @@ def create_policy(args):
 policy_output = pulumi.Output.all(
     caller_identity.arn,
     source_data_bucket.id,
-    caller_identity.account_id,
-    ec2_role_name,
-    dg_role_name,
+    api_task_role_arn,
+    dg_task_role_arn
 ).apply(create_policy)
 
 s3_bucket_policy_attachment = aws.s3.BucketPolicy(
