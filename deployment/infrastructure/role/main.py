@@ -234,8 +234,24 @@ data_generator_role = aws.iam.Role(
     ],
 )
 
-msk_policy = aws.iam.Policy(
-    f"{project_name}-msk-policy",
+ecs_update_service_policy = aws.iam.Policy(
+    f"{project_name}-ecs-update-service-policy",
+    policy=json.dumps(
+        {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": ["ecs:UpdateService"],
+                    "Resource": f"arn:aws:ecs:*:*:service/{project_name}-*",
+                }
+            ],
+        }
+    ),
+)
+
+put_logs_policy = aws.iam.Policy(
+    f"{project_name}-put-logs-policy",
     policy=json.dumps(
         {
             "Version": "2012-10-17",
@@ -243,62 +259,35 @@ msk_policy = aws.iam.Policy(
                 {
                     "Effect": "Allow",
                     "Action": [
-                        "kafka-cluster:Connect",
-                        "kafka-cluster:DescribeCluster",
+                        "logs:CreateLogGroup",
+                        "logs:CreateLogStream",
+                        "logs:PutLogEvents",
                     ],
-                    "Resource": [
-                        get_arn_template("kafka", f"cluster/{project_name}-*")
-                    ],
-                },
-                {
-                    "Effect": "Allow",
-                    "Action": [
-                        "kafka-cluster:WriteData",
-                        "kafka-cluster:DescribeTopic",
-                    ],
-                    "Resource": [get_arn_template("kafka", f"topic/{project_name}-*")],
-                },
-                {
-                    "Effect": "Allow",
-                    "Action": [
-                        "kafka-cluster:CreateTopic",
-                        "kafka-cluster:WriteData",
-                        "kafka-cluster:ReadData",
-                        "kafka-cluster:DescribeTopic",
-                    ],
-                    "Resource": [get_arn_template("kafka", f"topic/{project_name}-*")],
-                },
-                {
-                    "Effect": "Allow",
-                    "Action": [
-                        "kafka-cluster:AlterGroup",
-                        "kafka-cluster:DescribeGroup",
-                    ],
-                    "Resource": [
-                        get_arn_template("kafka", f"group/{project_name}-*"),
-                        get_arn_template("kafka", f"group/{project_name}-*"),
-                    ],
-                },
+                    "Resource": f"arn:aws:logs:*:*:log-group:{project_name}-*",
+                }
             ],
         }
     ),
 )
-msk_connector_service_role = aws.iam.Role(
-    f"{project_name}-msk-service-role",
+
+spot_shutdown_function_role = aws.iam.Role(
+    f"{project_name}-spot-shutdown-role",
     assume_role_policy=json.dumps(
         {
             "Version": "2012-10-17",
             "Statement": [
                 {
                     "Action": "sts:AssumeRole",
-                    "Principal": {"Service": "kafkaconnect.amazonaws.com"},
+                    "Principal": {"Service": "lambda.amazonaws.com"},
                     "Effect": "Allow",
                     "Sid": "",
                 }
             ],
         }
     ),
-    managed_policy_arns=[msk_policy.arn],
+    managed_policy_arns=[
+        ecs_update_service_policy.arn,
+    ],
 )
 
 
@@ -307,3 +296,4 @@ pulumi.export("api_task_role_arn", api_task_role.arn)
 pulumi.export("data_generator_task_role_arn", data_generator_role.arn)
 pulumi.export("data_processor_task_role_arn", api_task_role.arn)
 pulumi.export("kafka_bridge_task_role_arn", api_task_role.arn)
+pulumi.export("spot_shutdown_function_role_arn", spot_shutdown_function_role.arn)

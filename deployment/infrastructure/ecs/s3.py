@@ -82,3 +82,9 @@ s3_bucket_policy_attachment = aws.s3.BucketPolicy(
     policy=policy_output,
     opts=pulumi.ResourceOptions(retain_on_delete=True),
 )
+
+
+s3_lambda_function = aws.s3.Bucket(
+    f"{prefix}-lambda-function-bucket",
+    
+)
