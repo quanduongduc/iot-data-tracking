@@ -242,7 +242,7 @@ ecs_update_service_policy = aws.iam.Policy(
             "Statement": [
                 {
                     "Effect": "Allow",
-                    "Action": ["ecs:UpdateService"],
+                    "Action": ["ecs:UpdateService", "ecs:DescribeServices"],
                     "Resource": f"arn:aws:ecs:*:*:service/{project_name}-*",
                 }
             ],

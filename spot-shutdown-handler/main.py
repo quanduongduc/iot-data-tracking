@@ -1,6 +1,6 @@
-import boto3
+import json
 import os
-import re
+import boto3
 import logging
 
 
@@ -9,32 +9,44 @@ def handler(event, context):
     logging.info("Creating ECS client")
     ecs_client = boto3.client("ecs")
 
-    primary_service_arn = os.environ["PRIMARY_SERVICE_ARN"]
-    fallback_service_arn = os.environ["FALLBACK_SERVICE_ARN"]
+    primary_service_arn = get_service_arn(event)
+    try:
+        primary_fallback_mapping: dict = json.loads(os.environ.get("PRIMARY_FALLBACK_MAPPING"))
+        if primary_fallback_mapping is None or not isinstance(primary_fallback_mapping, dict):
+            logging.error("PRIMARY_FALLBACK_MAPPING environment variable not found or not a dictionary")
+            return
+        
+        if primary_service_arn not in primary_fallback_mapping:
+            logging.error(f"Primary service ARN {primary_service_arn} not found in PRIMARY_FALLBACK_MAPPING")
+            return
+        
+    except json.JSONDecodeError:
+        logging.error("Error parsing PRIMARY_FALLBACK_MAPPING environment variable")
+        return
+    
+    fallback_service_arn = primary_fallback_mapping.get(primary_service_arn)
 
     logging.info(f"Primary Service ARN: {primary_service_arn}")
     logging.info(f"Fallback Service ARN: {fallback_service_arn}")
 
     event_name = get_event_name(event)
-
+    cluster_arn = get_cluster_arn(event)
+    
     if event_name == "SERVICE_TASK_PLACEMENT_FAILURE":
         logging.info("Service task failed to be placed. Initiating fallback.")
-        primary_cluster_arn = extract_cluster_from_service_arn(primary_service_arn)
 
-        logging.info(
-            f"Describing {primary_service_arn} in cluster {primary_cluster_arn}"
-        )
+        logging.info(f"Describing {primary_service_arn} in cluster {cluster_arn}")
         result = ecs_client.describe_services(
-            cluster=primary_cluster_arn, services=[primary_service_arn]
+            cluster=cluster_arn, services=[primary_service_arn]
         )
         primary_service_desired_count = result["services"][0]["desiredCount"]
 
         logging.info(
             f"Setting desired count of {fallback_service_arn} to {primary_service_desired_count}"
         )
-        fallback_cluster_arn = extract_cluster_from_service_arn(fallback_service_arn)
+
         ecs_client.update_service(
-            cluster=fallback_cluster_arn,
+            cluster=cluster_arn,
             service=fallback_service_arn,
             desiredCount=primary_service_desired_count,
         )
@@ -42,10 +54,9 @@ def handler(event, context):
     elif event_name == "SERVICE_STEADY_STATE":
         logging.info("The primary service reached steady state.")
         logging.info(f"Setting desired count of {fallback_service_arn} to 0")
-        
-        fallback_cluster_arn = extract_cluster_from_service_arn(fallback_service_arn)
+
         ecs_client.update_service(
-            cluster=fallback_cluster_arn, service=fallback_service_arn, desiredCount=0
+            cluster=cluster_arn, service=fallback_service_arn, desiredCount=0
         )
 
     else:
@@ -60,13 +71,19 @@ def get_event_name(event):
     )
 
 
-SERVICE_REGEX = re.compile("(^arn:.*?):service/(.*?)/")
+def get_fallback_service_arn(primary_service_arn: str):
+    return primary_service_arn.replace("primary", "fallback")
 
+def get_service_arn(event):
+    return (
+        event["resources"][0]
+        if event and "resources" in event and len(event["resources"]) > 0
+        else None
+    )
 
-def extract_cluster_from_service_arn(service_arn: str):
-    if match := SERVICE_REGEX.match(service_arn):
-        return f"{match.group(1)}:cluster/{match.group(2)}"
-    else:
-        raise Exception(
-            f"Could not extract the cluster arn from the service {service_arn}"
-        )
+def get_cluster_arn(event):
+    return (
+        event["detail"]["clusterArn"]
+        if event and event["detail"] and event["detail"]["clusterArn"]
+        else None
+    )
