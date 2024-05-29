@@ -89,17 +89,10 @@ api_sg = aws.ec2.SecurityGroup(
     ingress=[
         aws.ec2.SecurityGroupIngressArgs(
             description="HTTP from loadbalancer",
-            from_port=80,
-            to_port=80,
+            from_port=5006,
+            to_port=5006,
             protocol=aws.ec2.ProtocolType.TCP,
             security_groups=[alb_sg.id],
-        ),
-        aws.ec2.SecurityGroupIngressArgs(
-            description="SSH from anywhere",
-            from_port=22,
-            to_port=22,
-            protocol=aws.ec2.ProtocolType.TCP,
-            cidr_blocks=["0.0.0.0/0"],
         ),
     ],
     egress=[
@@ -143,13 +136,6 @@ mqtt_sg = aws.ec2.SecurityGroup(
     description="Allow port for mqtt broker",
     ingress=[
         aws.ec2.SecurityGroupIngressArgs(
-            description="SSH from anywhere",
-            from_port=22,
-            to_port=22,
-            protocol=aws.ec2.ProtocolType.TCP,
-            cidr_blocks=["0.0.0.0/0"],
-        ),
-        aws.ec2.SecurityGroupIngressArgs(
             description="HTTP from loadbalancer",
             from_port=1883,
             to_port=1884,
@@ -172,15 +158,6 @@ data_generator_sg = aws.ec2.SecurityGroup(
     f"{prefix}-data-generator-sg",
     vpc_id=vpc.id,
     description="Allow data generator to access other services",
-    ingress=[
-        aws.ec2.SecurityGroupIngressArgs(
-            description="SSH from anywhere",
-            from_port=22,
-            to_port=22,
-            protocol=aws.ec2.ProtocolType.TCP,
-            cidr_blocks=["0.0.0.0/0"],
-        )
-    ],
     egress=[
         aws.ec2.SecurityGroupEgressArgs(
             description="Outbound access to anywhere for any protocol",
@@ -216,8 +193,8 @@ alb_sg_ingress = aws.ec2.SecurityGroupRule(
 alb_sg_egrees = aws.ec2.SecurityGroupRule(
     f"{prefix}-lb-sg-egress",
     type="egress",
-    from_port=80,
-    to_port=80,
+    from_port=5006,
+    to_port=5006,
     protocol=aws.ec2.ProtocolType.TCP,
     security_group_id=alb_sg.id,
     source_security_group_id=api_sg.id,
@@ -227,15 +204,6 @@ kafka_bridge_sg = aws.ec2.SecurityGroup(
     f"{prefix}-msk-client-sg",
     vpc_id=vpc.id,
     description="Allow access to MSK",
-    ingress=[
-        aws.ec2.SecurityGroupIngressArgs(
-            description="SSH from anywhere",
-            from_port=22,
-            to_port=22,
-            protocol=aws.ec2.ProtocolType.TCP,
-            cidr_blocks=["0.0.0.0/0"],
-        ),
-    ],
     egress=[
         aws.ec2.SecurityGroupEgressArgs(
             description="Outbound access to anywhere for any protocol",
@@ -251,22 +219,6 @@ data_processor_sg = aws.ec2.SecurityGroup(
     f"{prefix}-data-processor-sg",
     vpc_id=vpc.id,
     description="Allow access to data processor",
-    ingress=[
-        # aws.ec2.SecurityGroupIngressArgs(
-        #     description="Outbound access to anywhere for any protocol",
-        #     from_port=0,
-        #     to_port=0,
-        #     protocol="-1",
-        #     cidr_blocks=[kafka_bridge_sg.id, data_generator_sg.id],
-        # )
-        aws.ec2.SecurityGroupIngressArgs(
-            description="SSH from anywhere",
-            from_port=22,
-            to_port=22,
-            protocol=aws.ec2.ProtocolType.TCP,
-            cidr_blocks=["0.0.0.0/0"],
-        )
-    ],
     egress=[
         aws.ec2.SecurityGroupEgressArgs(
             description="Outbound access to anywhere for any protocol",

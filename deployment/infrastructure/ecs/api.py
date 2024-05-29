@@ -51,8 +51,8 @@ api_log_stream = aws.cloudwatch.LogStream(
 api_task_definition = aws.ecs.TaskDefinition(
     f"{prefix}-api-task",
     family=f"{prefix}-api-task",
-    cpu="256",
-    memory="512",
+    cpu="512",
+    memory="1024",
     network_mode="awsvpc",
     requires_compatibilities=["FARGATE"],
     task_role_arn=api_task_role_arn,
@@ -65,9 +65,8 @@ api_task_definition = aws.ecs.TaskDefinition(
                 {
                     "name": f"{prefix}-api-container",
                     "image": args[0],
-                    "portMappings": [{"containerPort": 80, "hostPort": 80}],
+                    "portMappings": [{"containerPort": 5006}],
                     "environment": [
-                        {"name": "PORT", "value": "80"},
                         {"name": "ENVIRONMENT", "value": f"{stack_name.upper()}"},
                         {"name": "AWS_SECRET_ID", "value": f"{args[2]}"},
                         {"name": "AWS_DEFAULT_REGION", "value": f"{region}"},
@@ -95,7 +94,7 @@ api_target_group = aws.lb.TargetGroup(
     health_check=aws.lb.TargetGroupHealthCheckArgs(
         path="/health",
         protocol="HTTP",
-        port="traffic-port",
+        port=5006,
         interval=10,
         timeout=5,
         unhealthy_threshold=2,
@@ -130,7 +129,7 @@ api_on_demand_service, api_spot_service = generate_fargate_services(
     load_balancers=[
         aws.ecs.ServiceLoadBalancerArgs(
             container_name=f"{prefix}-api-container",
-            container_port=80,
+            container_port=5006,
             target_group_arn=api_target_group.arn,
         )
     ],

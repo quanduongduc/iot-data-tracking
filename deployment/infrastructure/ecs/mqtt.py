@@ -80,7 +80,7 @@ mqtt_task_definition = aws.ecs.TaskDefinition(
     ),
 )
 
-mosquitto_nlb = aws.lb.LoadBalancer(
+mqtt_nlb = aws.lb.LoadBalancer(
     f"{prefix}-mqtt-nlb",
     internal=False,
     subnets=[ecs_public_subnet_id],
@@ -124,9 +124,9 @@ mqtt_target_group = aws.lb.TargetGroup(
 )
 
 
-mosquitto_nlb_mqtt_listener = aws.lb.Listener(
+mqtt_nlb_mqtt_listener = aws.lb.Listener(
     f"{prefix}-mqtt-listener",
-    load_balancer_arn=mosquitto_nlb.arn,
+    load_balancer_arn=mqtt_nlb.arn,
     port=1883,
     protocol="TCP",
     default_actions=[
@@ -134,12 +134,12 @@ mosquitto_nlb_mqtt_listener = aws.lb.Listener(
             type="forward", target_group_arn=mqtt_target_group.arn
         )
     ],
-    opts=pulumi.ResourceOptions(depends_on=[mosquitto_nlb], delete_before_replace=True),
+    opts=pulumi.ResourceOptions(depends_on=[mqtt_nlb], delete_before_replace=True),
 )
 
-mosquitto_nlb_ws_listener = aws.lb.Listener(
+mqtt_nlb_ws_listener = aws.lb.Listener(
     f"{prefix}-ws-listener",
-    load_balancer_arn=mosquitto_nlb.arn,
+    load_balancer_arn=mqtt_nlb.arn,
     port=1884,
     protocol="TCP",
     default_actions=[
@@ -147,7 +147,7 @@ mosquitto_nlb_ws_listener = aws.lb.Listener(
             type="forward", target_group_arn=mqtt_ws_target_group.arn
         )
     ],
-    opts=pulumi.ResourceOptions(depends_on=[mosquitto_nlb], delete_before_replace=True),
+    opts=pulumi.ResourceOptions(depends_on=[mqtt_nlb], delete_before_replace=True),
 )
 
 mqtt_on_demand_service, _ = generate_fargate_services(
@@ -178,4 +178,4 @@ mqtt_on_demand_service, _ = generate_fargate_services(
 MQTT_SOURCE_TOPIC = "weather/data"
 MQTT_PROCESSED_TOPIC = "weather/processed"
 
-pulumi.export("mqtt_nlb_dns_name", mosquitto_nlb.dns_name)
+pulumi.export("mqtt_nlb_dns_name", mqtt_nlb.dns_name)

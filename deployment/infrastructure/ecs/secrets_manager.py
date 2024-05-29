@@ -34,11 +34,11 @@ CORS_ORIGINS = ["*"]
 
 secret = aws.secretsmanager.Secret(f"{prefix}-secret")
 
-from infrastructure.ecs.mosquitto import (
+from infrastructure.ecs.mqtt import (
     MQTT_PROCESSED_TOPIC,
     MQTT_SOURCE_TOPIC,
-    mosquitto_nlb,
-    mosquitto_nlb_mqtt_listener,
+    mqtt_nlb,
+    mqtt_nlb_mqtt_listener,
 )
 from infrastructure.ecs.s3 import source_data_bucket
 from infrastructure.ecs.dynamodb import dynamodb_table
@@ -71,14 +71,14 @@ secret_version = aws.secretsmanager.SecretVersion(
     f"{prefix}-secret-version",
     secret_id=secret.id,
     secret_string=pulumi.Output.all(
-        mosquitto_nlb.dns_name,
+        mqtt_nlb.dns_name,
         source_data_bucket.bucket,
         rds_instance.address,
         rds_instance.port,
         rds_instance.username,
         rds_instance.password,
         rds_instance.db_name,
-        mosquitto_nlb_mqtt_listener.port,
+        mqtt_nlb_mqtt_listener.port,
         msk_cluster.bootstrap_brokers,
         elasticache_cluster.cache_nodes[0].address,
         elasticache_cluster.port,
