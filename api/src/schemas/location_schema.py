@@ -13,12 +13,8 @@ class LocationWeatherDataPayload(RootSchema):
 
 
 class LocationWeatherDataResponse(RootSchema):
-    location_id: int
+    location_id: str
     temperature: float
-    humidity: float
-    wind_speed: float
-    wind_direction: float
-    rain_fall: float
     date: datetime
     latitude: float
     longitude: float
@@ -27,3 +23,7 @@ class LocationWeatherDataResponse(RootSchema):
     tmn: float
     tmx: float
     wet: float
+    pre: float
+    dtr: float
+    frs: float
+    vap: float

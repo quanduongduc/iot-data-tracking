@@ -76,23 +76,22 @@ async def get_location_data(
                 ScanIndexForward=False,
             )
             weather_data = result["Items"]
-
             weather_data_response = [
                 LocationWeatherDataResponse(
                     location_id=weather["location"],
-                    temperature=weather["tmp"],
-                    humidity=weather["humidity"],
-                    wind_speed=weather["wind_speed"],
-                    wind_direction=weather["wind_direction"],
-                    rain_fall=weather["rain_fall"],
+                    temperature=float(weather["tmp"]),
                     date=weather["Date"],
-                    latitude=weather["Latitude"],
-                    longitude=weather["Longitude"],
-                    cld=weather["cld"],
-                    pet=weather["pet"],
-                    tmn=weather["tmn"],
-                    tmx=weather["tmx"],
-                    wet=weather["wet"],
+                    latitude=float(weather["Latitude"]),
+                    longitude=float(weather["Longitude"]),
+                    cld=float(weather["cld"]),
+                    pet=float(weather["pet"]),
+                    tmn=float(weather["tmn"]),
+                    tmx=float(weather["tmx"]),
+                    wet=float(weather["wet"]),
+                    pre=float(weather["pre"]),
+                    dtr=float(weather["dtr"]),
+                    frs=float(weather["frs"]),
+                    vap=float(weather["vap"]),
                 )
                 for weather in weather_data
             ]
