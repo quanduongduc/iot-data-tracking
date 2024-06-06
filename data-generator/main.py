@@ -5,6 +5,7 @@ import traceback
 from uuid import uuid4
 import aiomqtt
 import aioboto3
+from botocore.exceptions import ClientError
 import orjson
 
 from config import settings
@@ -39,7 +40,9 @@ async def publish_data(
                             payload=orjson.dumps(data),
                         )
                         await asyncio.sleep(frequency)
-
+        except ClientError as error:
+            logging.error(f"Error while getting object: {error}")
+            raise
         except Exception as error:
             traceback.print_exc()
 

@@ -55,6 +55,7 @@ kafka_bridge_task_definition = aws.ecs.TaskDefinition(
                         {"name": "ENVIRONMENT", "value": f"{stack_name.upper()}"},
                         {"name": "AWS_SECRET_ID", "value": f"{args[2]}"},
                         {"name": "AWS_DEFAULT_REGION", "value": f"{region}"},
+                        {"name": "ECS_ENABLE_CONTAINER_METADATA", "value": "true"},
                     ],
                     "logConfiguration": {
                         "logDriver": "awslogs",

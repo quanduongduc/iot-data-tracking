@@ -49,6 +49,7 @@ from infrastructure.ecs.msk import (
     msk_cluster,
 )
 from infrastructure.ecs.cache import elasticache_cluster
+from infrastructure.ecs.sqs import sqs_shutdown_queue
 
 secrets_dict = {
     "ENVIRONMENT": ENVIRONMENT,
@@ -83,6 +84,7 @@ secret_version = aws.secretsmanager.SecretVersion(
         elasticache_cluster.cache_nodes[0].address,
         elasticache_cluster.port,
         dynamodb_table.name,
+        sqs_shutdown_queue.url,
     ).apply(
         lambda args: json.dumps(
             {
@@ -99,6 +101,7 @@ secret_version = aws.secretsmanager.SecretVersion(
                 "REDIS_HOST": args[9],
                 "REDIS_PORT": args[10],
                 "DYNAMODB_TABLE_NAME": args[11],
+                "SHUTDOWN_QUEUE_URL": args[12],
             }
         ),
     ),

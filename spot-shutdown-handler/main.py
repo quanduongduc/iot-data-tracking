@@ -23,8 +23,9 @@ def handler(event, context):
     except json.JSONDecodeError:
         logging.error("Error parsing PRIMARY_FALLBACK_MAPPING environment variable")
         return
-    
-    fallback_service_arn = primary_fallback_mapping.get(primary_service_arn)
+    primary_service_name = primary_service_arn.split("/")[-1]
+    fallback_service_name = primary_fallback_mapping.get(primary_service_name)
+    fallback_service_arn = primary_service_arn.replace(primary_service_name, fallback_service_name)
 
     logging.info(f"Primary Service ARN: {primary_service_arn}")
     logging.info(f"Fallback Service ARN: {fallback_service_arn}")

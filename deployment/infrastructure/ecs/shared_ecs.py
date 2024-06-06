@@ -1,7 +1,5 @@
-import json
 import pulumi
 import pulumi_aws as aws
-import pulumi_awsx as awsx
 from infrastructure.environment import prefix, ref_prefix
 
 network_stack = pulumi.StackReference(f"{ref_prefix}/network")
@@ -36,7 +34,7 @@ def generate_fargate_services(prefix: str, need_spot=True, *args, **kwargs) -> t
         desired_count=0 if need_spot else desired_count,
         **kwargs,
     )
-
+    
     if need_spot:
         spot_service = aws.ecs.Service(
             f"{prefix}-spot-service",
@@ -51,5 +49,4 @@ def generate_fargate_services(prefix: str, need_spot=True, *args, **kwargs) -> t
         )
 
         return on_demand_service, spot_service
-
     return on_demand_service, None

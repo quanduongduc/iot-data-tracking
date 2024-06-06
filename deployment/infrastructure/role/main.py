@@ -187,6 +187,22 @@ dynamodb_policy = aws.iam.Policy(
     ),
 )
 
+sqs_policy = aws.iam.Policy(
+    f"{project_name}-sqs-policy",
+    policy=json.dumps(
+        {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": ["sqs:ReceiveMessage", "sqs:DeleteMessage"],
+                    "Resource": get_arn_template("sqs", f"{project_name}-*"),
+                }
+            ],
+        }
+    ),
+)
+
 api_task_role = aws.iam.Role(
     f"{project_name}-api-task-role",
     assume_role_policy=json.dumps(
@@ -208,6 +224,7 @@ api_task_role = aws.iam.Role(
         cloudwatch_policy.arn,
         ecs_registration_policy.arn,
         dynamodb_policy.arn,
+        sqs_policy.arn,
     ],
 )
 
@@ -231,6 +248,7 @@ data_generator_role = aws.iam.Role(
         secret_manager_policy.arn,
         cloudwatch_policy.arn,
         ecs_registration_policy.arn,
+        sqs_policy.arn,
     ],
 )
 
@@ -270,7 +288,7 @@ put_logs_policy = aws.iam.Policy(
     ),
 )
 
-spot_shutdown_function_role = aws.iam.Role(
+spot_shutdown_lambda_role = aws.iam.Role(
     f"{project_name}-spot-shutdown-role",
     assume_role_policy=json.dumps(
         {
@@ -296,4 +314,4 @@ pulumi.export("api_task_role_arn", api_task_role.arn)
 pulumi.export("data_generator_task_role_arn", data_generator_role.arn)
 pulumi.export("data_processor_task_role_arn", api_task_role.arn)
 pulumi.export("kafka_bridge_task_role_arn", api_task_role.arn)
-pulumi.export("spot_shutdown_function_role_arn", spot_shutdown_function_role.arn)
+pulumi.export("spot_shutdown_lambda_role_arn", spot_shutdown_lambda_role.arn)
