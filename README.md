@@ -50,6 +50,7 @@
 
 <!-- ABOUT THE PROJECT -->
 ## <a name="about"></a>About This Project
+![image](https://github.com/quanduongduc/iot-data-tracking/assets/59951771/0e5e9237-5c3f-46c1-a001-d43b50afd1c2)
 
 [🔝 Back to Top](#readme-top-anchor)
 
