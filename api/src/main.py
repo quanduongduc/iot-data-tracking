@@ -78,20 +78,12 @@ async def get_location_data(
             weather_data = result["Items"]
             weather_data_response = [
                 LocationWeatherDataResponse(
-                    location_id=weather["location"],
-                    temperature=float(weather["tmp"]),
-                    date=weather["Date"],
-                    latitude=float(weather["Latitude"]),
-                    longitude=float(weather["Longitude"]),
-                    cld=float(weather["cld"]),
-                    pet=float(weather["pet"]),
-                    tmn=float(weather["tmn"]),
-                    tmx=float(weather["tmx"]),
-                    wet=float(weather["wet"]),
-                    pre=float(weather["pre"]),
-                    dtr=float(weather["dtr"]),
-                    frs=float(weather["frs"]),
-                    vap=float(weather["vap"]),
+                    location_name=weather["location"],
+                    data={
+                        key: value
+                        for key, value in weather.items()
+                        if key != "location"
+                    },
                 )
                 for weather in weather_data
             ]

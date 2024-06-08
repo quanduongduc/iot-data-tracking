@@ -1,5 +1,6 @@
 from datetime import datetime
 from .root_schema import RootSchema
+from typing import Dict
 
 
 class LocationResponse(RootSchema):
@@ -13,17 +14,5 @@ class LocationWeatherDataPayload(RootSchema):
 
 
 class LocationWeatherDataResponse(RootSchema):
-    location_id: str
-    temperature: float
-    date: datetime
-    latitude: float
-    longitude: float
-    cld: float
-    pet: float
-    tmn: float
-    tmx: float
-    wet: float
-    pre: float
-    dtr: float
-    frs: float
-    vap: float
+    location_name: str
+    data: Dict
