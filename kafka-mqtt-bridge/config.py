@@ -80,6 +80,7 @@ class AppSettings(BaseSettings):
     KAFKA_WEATHER_DATA_TOPIC: str
     KAFKA_WEATHER_DATA_GROUP_ID: str
 
+    SHUTDOWN_QUEUE_URL: str
     @property
     def is_production(self) -> bool:
         return self.ENVIRONMENT.is_production
