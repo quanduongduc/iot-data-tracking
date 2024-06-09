@@ -1,11 +1,17 @@
 import sys
-
-sys.path.append("../../")
-
 import json
 import pulumi
 import pulumi_aws as aws
-from infrastructure.environment import get_arn_template, project_name
+
+sys.path.append("../../")
+
+from infrastructure.environment import get_arn_template, project_name, account_id
+
+
+permission_boundary_arn = (
+    f"arn:aws:iam::{account_id}:policy/{project_name}-permission-boundary"
+)
+
 
 ecr_read_policy = aws.iam.Policy(
     f"{project_name}-ecr-read-policy",
@@ -57,7 +63,6 @@ cloudwatch_policy = aws.iam.Policy(
     ),
 )
 
-
 task_execution_role = aws.iam.Role(
     f"{project_name}-task-execution-role",
     assume_role_policy=pulumi.Output.all(
@@ -78,8 +83,8 @@ task_execution_role = aws.iam.Role(
         )
     ),
     managed_policy_arns=[ecr_read_policy.arn, cloudwatch_policy.arn],
+    permissions_boundary=permission_boundary_arn,
 )
-
 
 s3_read_policy = aws.iam.Policy(
     f"{project_name}-s3-read-policy",
@@ -226,6 +231,7 @@ api_task_role = aws.iam.Role(
         dynamodb_policy.arn,
         sqs_policy.arn,
     ],
+    permissions_boundary=permission_boundary_arn,
 )
 
 data_generator_role = aws.iam.Role(
@@ -250,6 +256,7 @@ data_generator_role = aws.iam.Role(
         ecs_registration_policy.arn,
         sqs_policy.arn,
     ],
+    permissions_boundary=permission_boundary_arn,
 )
 
 ecs_update_service_policy = aws.iam.Policy(
@@ -306,8 +313,8 @@ spot_shutdown_lambda_role = aws.iam.Role(
     managed_policy_arns=[
         ecs_update_service_policy.arn,
     ],
+    permissions_boundary=permission_boundary_arn,
 )
-
 
 pulumi.export("task_execution_role_arn", task_execution_role.arn)
 pulumi.export("api_task_role_arn", api_task_role.arn)
